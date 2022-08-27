@@ -35,20 +35,72 @@
 
 #include <iostream>
 #include <vector>
+#include <sstream>
+#include <string>
 
 using std::vector;
 using std::cout;
 using std::endl;
+using std::ostream;
+using std::stringstream;
+using std::string;
 
 class Solution {
 public:
     vector<int> searchRange(vector<int>& nums, int target) {
+        int left = 0, right = nums.size() - 1;
+        int ans = 0;
+        while (left <= right) {
+            int middle = left + (right - left) / 2;
+            if (target < nums[middle]) {
+                right = middle - 1;
+            } else if (target > nums[middle]) {
+                left =  middle + 1;
+            } else {
+                ans = middle;
+                break;
+            }
+        }
 
+        if (ans >= 0 && ans < nums.size() && nums[ans] == target) {
+            for (int i = ans; i >= 0; i--) {
+                if (nums[i] == target) {
+                    left = i;
+                }
+            }
+
+            for (int i = ans ; i <= nums.size() - 1; i++) {
+                if (nums[i] == target) {
+                    right = i;
+                }
+            }
+
+            return {left, right};
+        }
+
+        return {-1, -1};
     }
 };
 
+ostream& operator<< (ostream& out, const vector<int>& v) {
+    out << '[';
+    string comma = "";
+    for (auto& i : v) {
+        out << comma;
+        out << i;
+        comma = ',';
+    }
+    out << ']';
+
+    return out;
+}
+
 int main(int argc, char const *argv[])
 {
-    /* code */
+    vector<int> nums = {5,7,7,8,8,10};
+    Solution solution;
+    cout << solution.searchRange(nums, 8);
+    cout << solution.searchRange(nums, 6);
+    cout << solution.searchRange(nums, 0);
     return 0;
 }
