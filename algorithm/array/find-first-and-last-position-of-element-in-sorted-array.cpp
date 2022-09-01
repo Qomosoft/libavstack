@@ -48,37 +48,28 @@ using std::string;
 class Solution {
 public:
     vector<int> searchRange(vector<int>& nums, int target) {
-        int left = 0, right = nums.size() - 1;
-        int ans = 0;
+        return {find(nums, target, true), find(nums, target, false)};
+    }
+
+    int find(vector<int>& nums, int target, bool min) {
+        int left = 0, right = nums.size() - 1, ans = -1;
         while (left <= right) {
             int middle = left + (right - left) / 2;
-            if (target < nums[middle]) {
-                right = middle - 1;
-            } else if (target > nums[middle]) {
-                left =  middle + 1;
-            } else {
+            if (target == nums[middle]) {
                 ans = middle;
-                break;
+                if (min) {
+                    right = middle - 1;
+                } else {
+                    left = middle + 1;
+                }
+            } else if (target < nums[middle]) {
+                right = middle - 1;
+            } else {
+                left = middle + 1;
             }
         }
 
-        if (ans >= 0 && ans < nums.size() && nums[ans] == target) {
-            for (int i = ans; i >= 0; i--) {
-                if (nums[i] == target) {
-                    left = i;
-                }
-            }
-
-            for (int i = ans ; i <= nums.size() - 1; i++) {
-                if (nums[i] == target) {
-                    right = i;
-                }
-            }
-
-            return {left, right};
-        }
-
-        return {-1, -1};
+        return ans;
     }
 };
 
