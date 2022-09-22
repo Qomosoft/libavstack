@@ -44,6 +44,14 @@ using namespace std;
 class Solution {
 public:
     void moveZeroes(vector<int>& nums) {
+        int n = nums.size(), slow = 0, fast = 0;
+        while (fast < n) {
+            if (nums[fast]) {
+                std::swap(nums[slow], nums[fast]);
+                slow++;
+            }
+            fast++;
+        }
     }
 };
 //leetcode submit region end(Prohibit modification and deletion)
@@ -65,6 +73,9 @@ ostream& operator<<(ostream& out, const vector<T>& v) {
 int main()
 {
     vector<int> nums = {0, 1, 0, 3, 12};
+    cout << nums << endl;
+    Solution solution;
+    solution.moveZeroes(nums);
     cout << nums << endl;
     return 0;
 }
