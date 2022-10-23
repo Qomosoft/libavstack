@@ -49,6 +49,7 @@
 
 #include <iostream>
 #include <vector>
+#include <climits>
 
 using namespace std;
 
@@ -64,13 +65,48 @@ public:
             sum += nums[j];
             // 注意这里使用while，每次更新 i（起始位置），并不断比较子序列是否符合条件
             while (sum >= target) {
-                window = (j - i + 1); // 取子序列的长度
+                window = j - i + 1; // 取子序列的长度
                 result = result < window ? result : window;
                 sum -= nums[i++]; // 这里体现出滑动窗口的精髓之处，不断变更i（子序列的起始位置）
             }
         }
         // 如果result没有被赋值的话，就返回0，说明没有符合条件的子序列
         return result == INT32_MAX ? 0 : result;
+    }
+
+    int minSubArrayLen_1(int target, vector<int>& nums) {
+        int result = INT32_MAX;
+        int cur_seq_len = 0;
+        for (int i = 0; i < nums.size(); i++) {
+            int sum = 0;
+            for (int j = i; j < nums.size(); j++) {
+                sum += nums[j];
+                if (sum >= target) {
+                    cur_seq_len = j - i + 1;
+                    result = cur_seq_len < result ? cur_seq_len : result;
+                    break;
+                }
+            }
+        }
+
+        return result == INT32_MAX ? 0 : result;
+    }
+
+    int minSubArrayLen_2(int target, vector<int>& nums) {
+        int n = nums.size();
+        int ans = INT_MAX;
+        int start = 0, end = 0;
+        int sum = 0;
+        while (end < n) {
+            sum += nums[end];
+            while (sum >= target) {
+                ans = min(ans, end - start + 1);
+                sum -= nums[start++];
+            }
+            end++;
+        }
+
+        return ans == INT_MAX ? 0 : ans;
     }
 };
 //leetcode submit region end(Prohibit modification and deletion)
@@ -80,5 +116,7 @@ int main(int argc, const char* argv[])
     vector<int> nums = {2,3,1,2,4,3};
     Solution solution;
     cout << solution.minSubArrayLen(7, nums) << endl;
+    cout << solution.minSubArrayLen_1(7, nums) << endl;
+    cout << solution.minSubArrayLen_2(7, nums) << endl;
     return 0;
 }
