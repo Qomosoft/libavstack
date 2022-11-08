@@ -59,6 +59,39 @@ using namespace std;
 class Solution {
 public:
     string minWindow(string s, string t) {
+        string ans = "";
+        int ns = s.size(), nt = t.size();
+        if (ns < nt) return ans;
+
+        unordered_map<char, int> ht, hs;
+        for (char c : t) ht[c]++;
+
+        int need = nt;
+        int min_len = ns + 1;
+        int st = -1;
+
+        for (int l = 0, r = 0; r < ns; ++r) {
+            if (ht.count(s[r])) {
+                if (ht[s[r]] > 0) need--;
+                ht[s[r]]--;
+            }
+
+            while (need == 0) {
+                if (r - l + 1 < min_len) {
+                    st = l;
+                    min_len = r - l + 1;
+//                    ans = s.substr(st, min_len); //会导致超时
+                }
+
+                if (ht.count(s[l])) {
+                    if (ht[s[l]] == 0) need++;
+                    ht[s[l]]++;
+                }
+                l++;
+            }
+        }
+
+        return min_len == ns + 1 ? "" : s.substr(st, min_len);
     }
 };
 //leetcode submit region end(Prohibit modification and deletion)
@@ -67,6 +100,8 @@ int main(int argc, const char* argv[])
 {
     string s = "ADOBECODEBANC";
     string t = "ABC";
+//    string s = "a";
+//    string t = "aa";
     Solution solution;
     cout << solution.minWindow(s, t) << endl;
     return 0;
