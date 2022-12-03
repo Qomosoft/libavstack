@@ -38,6 +38,13 @@
 //
 // Related Topics 设计 链表 👍 694 👎 0
 
+#include <iostream>
+#include <memory>
+#include <algorithm>
+#include <string>
+
+using namespace std;
+
 struct ListNode {
     int val;
     ListNode *next;
@@ -50,33 +57,98 @@ struct ListNode {
 
 class MyLinkedList {
 public:
-    MyLinkedList() : head_(nullptr) {
+    MyLinkedList() : size_(0) {
+        head_ = new ListNode();
+    }
 
+    MyLinkedList(const initializer_list<int> &elements) {
+        head_ = new ListNode();
+        ListNode *cur = head_;
+        for (auto &element : elements) {
+            cur->next = new ListNode(element);
+            cur = cur->next;
+            size_++;
+        }
+    }
+
+    virtual ~MyLinkedList() {
+        ListNode *cur = head_;
+        while (cur) {
+            ListNode *next = cur->next;
+            delete cur;
+            cur = next;
+        }
+        head_ = nullptr;
+        size_ = 0;
     }
 
     int get(int index) {
-
+        if (index < 0 || index >= size_) {
+            return -1;
+        }
+        ListNode *cur = head_;
+        for (int i = 0; i <= index; i++) {
+            cur = cur->next;
+        }
+        return cur->val;
     }
 
     void addAtHead(int val) {
-
+        addAtIndex(0, val);
     }
 
     void addAtTail(int val) {
-
+        addAtIndex(size_, val);
     }
 
     void addAtIndex(int index, int val) {
-
+        if (index > size_) {
+            return;
+        }
+        index = max(0, index);
+        size_++;
+        ListNode *pre = head_;
+        for (int i = 0; i < index; i++) {
+            pre = pre->next;
+        }
+        ListNode *cur = new ListNode(val);
+        cur->next = pre->next;
+        pre->next = cur;
     }
 
     void deleteAtIndex(int index) {
-
+        if (index < 0 || index >= size_) {
+            return;
+        }
+        size_--;
+        ListNode *pre = head_;
+        for (int i = 0; i < index; i++) {
+            pre = pre->next;
+        }
+        ListNode *cur = pre->next;
+        pre->next = pre->next->next;
+        delete cur;
     }
-
 private:
+    int size_;
     ListNode *head_;
+
+public:
+    friend ostream &operator<<(ostream &out, const MyLinkedList &list);
 };
+
+ostream &operator<<(ostream &out, const MyLinkedList &list) {
+    out << '[';
+    string comma = "";
+    ListNode *cur = list.head_->next;
+    while (cur) {
+        out << comma << cur->val;
+        comma = ",";
+        cur = cur->next;
+    }
+    out << ']';
+    return out;
+}
 
 /**
  * Your MyLinkedList object will be instantiated and called as such:
@@ -90,5 +162,15 @@ private:
 
 int main(int argc, const char *argv[])
 {
+//    MyLinkedList list = {1, 2, 3, 4, 5, 6, 7};
+    MyLinkedList list;
+    list.addAtHead(2);
+    cout << list << endl;
+    list.addAtHead(1);
+    cout << list << endl;
+    list.addAtTail(3);
+    cout << list << endl;
+    list.addAtIndex(3, 4);
+    cout << list << endl;
     return 0;
 }
