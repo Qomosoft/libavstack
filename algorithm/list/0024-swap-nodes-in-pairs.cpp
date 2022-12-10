@@ -34,6 +34,13 @@
 //
 // Related Topics 递归 链表 👍 1646 👎 0
 
+#include <iostream>
+#include <string>
+#include <initializer_list>
+#include <memory>
+
+using namespace std;
+
 struct ListNode {
     int val;
     ListNode *next;
@@ -41,6 +48,32 @@ struct ListNode {
     ListNode(int x) : val(x), next(nullptr) {}
     ListNode(int x, ListNode *next) : val(x), next(next) {}
 };
+
+ListNode *GenerateList(const initializer_list<int> &elements) {
+    ListNode *dummy_head = new ListNode();
+    ListNode *cur = dummy_head;
+    for (auto &element : elements) {
+        cur->next = new ListNode(element);
+        cur = cur->next;
+    }
+
+    return dummy_head;
+}
+
+ostream &operator <<(ostream &out, ListNode *head) {
+    out << '[';
+    ListNode *cur = head;
+    string comma = "";
+
+    while (cur) {
+        out << comma << cur->val;
+        cur = cur->next;
+        comma = ",";
+    }
+    out << ']';
+
+    return out;
+}
 
 /**
  * Definition for singly-linked list.
@@ -55,11 +88,27 @@ struct ListNode {
 class Solution {
 public:
     ListNode* swapPairs(ListNode* head) {
-
+        unique_ptr<ListNode> dummyHead = make_unique<ListNode>();
+        dummyHead->next = head;
+        ListNode* cur = dummyHead.get();
+        while (cur->next != nullptr && cur->next->next != nullptr) {
+            ListNode* node1 = cur->next;
+            ListNode* node2 = cur->next->next;
+            cur->next = node2;
+            node1->next = node2->next;
+            node2->next = node1;
+            cur = node1;
+        }
+        return dummyHead->next;
     }
 };
 
 int main(int argc, const char *argv[])
 {
+    ListNode *dummy_head = GenerateList({1, 2, 3, 4, 5, 6});
+    Solution solution;
+    cout << dummy_head->next << endl;
+    cout << solution.swapPairs(dummy_head->next);
+
     return 0;
 }
