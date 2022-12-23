@@ -77,7 +77,7 @@ public class RoomParametersFetcher {
         try {
             List<IceCandidate> iceCandidates = null;
             SessionDescription offerSdp = null;
-            JSONObject roomJson = new JSONObject();
+            JSONObject roomJson = new JSONObject(response);
 
             String result = roomJson.getString("result");
             if (!result.equals("SUCCESS")) {

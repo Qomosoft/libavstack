@@ -1,10 +1,25 @@
 package com.qomosoft.qomortc;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.qomosoft.qomortc.activity.BaseActivity;
+import com.qomosoft.qomortc.signaling.AppRTCClient;
+import com.qomosoft.qomortc.signaling.AppRTCClient.SignalingParameters;
+import com.qomosoft.qomortc.signaling.AppRTCClient.RoomConnectionParameters;
+import com.qomosoft.qomortc.signaling.WebSocketRTCClient;
 
-public class CallActivity extends BaseActivity {
+import org.webrtc.IceCandidate;
+import org.webrtc.SessionDescription;
+
+import javax.annotation.Nullable;
+
+public class CallActivity extends BaseActivity implements AppRTCClient.SignalingEvents {
     private static final String TAG = "CallRTCClient";
 
     public static final String EXTRA_ROOMID = "org.appspot.apprtc.ROOMID";
@@ -58,9 +73,174 @@ public class CallActivity extends BaseActivity {
     public static final String EXTRA_ID = "org.appspot.apprtc.ID";
     public static final String EXTRA_ENABLE_RTCEVENTLOG = "org.appspot.apprtc.ENABLE_RTCEVENTLOG";
 
+    @Nullable
+    private AppRTCClient appRtcClient;
+    @Nullable
+    private SignalingParameters signalingParameters;
+    private RoomConnectionParameters roomConnectionParameters;
+    private Toast logToast;
+    private boolean connected;
+    private boolean isError;
+    private long callStartedTimeMs;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_call);
+
+        connected = false;
+        signalingParameters = null;
+
+        final Intent intent = getIntent();
+        Uri roomUri = intent.getData();
+        if (roomUri == null) {
+            logAndToast(getString(R.string.missing_url));
+            Log.e(TAG, "Didn't get any URL in intent!");
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+
+        // Get Intent parameters.
+        String roomId = intent.getStringExtra(EXTRA_ROOMID);
+        Log.d(TAG, "Room ID: " + roomId);
+        if (roomId == null || roomId.length() == 0) {
+            logAndToast(getString(R.string.missing_url));
+            Log.e(TAG, "Incorrect room ID in intent!");
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+        boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
+
+        appRtcClient = new WebSocketRTCClient(this);
+        // Create connection parameters.
+        String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
+        roomConnectionParameters =
+                new RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters);
+        startCall();
+    }
+
+    @Override
+    protected void onDestroy() {
+        disconnect();
+        if (logToast != null) {
+            logToast.cancel();
+        }
+        super.onDestroy();
+    }
+
+    private void startCall() {
+        if (appRtcClient == null) {
+            Log.e(TAG, "AppRTC client is not allocated for a call.");;
+            return;
+        }
+        callStartedTimeMs = System.currentTimeMillis();
+
+        // Start room connection.
+        logAndToast(getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
+        appRtcClient.connectToRoom(roomConnectionParameters);
+    }
+
+    // Disconnect from remote resources, dispose of local resources, and exit.
+    private void disconnect() {
+        if (appRtcClient != null) {
+            appRtcClient.disconnectFromRoom();
+            appRtcClient = null;
+        }
+        if (connected && !isError) {
+            setResult(RESULT_OK);
+        } else {
+            setResult(RESULT_CANCELED);
+        }
+        finish();
+    }
+
+    private void disconnectWithErrorMessage(final String errorMessage) {
+        new AlertDialog.Builder(this)
+                .setTitle(getText(R.string.channel_error_title))
+                .setMessage(errorMessage)
+                .setCancelable(false)
+                .setNeutralButton(R.string.ok,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.cancel();
+                                disconnect();
+                            }
+                        })
+                .create()
+                .show();
+    }
+
+
+    // Log |msg| and Toast about it.
+    private void logAndToast(String msg) {
+        Log.d(TAG, msg);
+        if (logToast != null) {
+            logToast.cancel();
+        }
+        logToast = Toast.makeText(this, msg, Toast.LENGTH_SHORT);
+        logToast.show();
+    }
+
+    private void reportError(final String description) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (!isError) {
+                    isError = true;
+                    disconnectWithErrorMessage(description);
+                }
+            }
+        });
+    }
+
+    private void onConnectedToRoomInternal(final SignalingParameters params) {
+        final long delta = System.currentTimeMillis() - callStartedTimeMs;
+
+        signalingParameters = params;
+        logAndToast("Creating peer connection, delay=" + delta + "ms");
+    }
+
+    @Override
+    public void onConnectedToRoom(SignalingParameters params) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                onConnectedToRoomInternal(params);
+            }
+        });
+    }
+
+    @Override
+    public void onRemoteDescription(SessionDescription sdp) {
+
+    }
+
+    @Override
+    public void onRemoteIceCandidate(IceCandidate candidate) {
+
+    }
+
+    @Override
+    public void onRemoteIceCandidatesRemoved(IceCandidate[] candidates) {
+
+    }
+
+    @Override
+    public void onChannelClose() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                logAndToast("Remote end hung up; dropping PeerConnection");
+                disconnect();
+            }
+        });
+    }
+
+    @Override
+    public void onChannelError(String description) {
+
     }
 }

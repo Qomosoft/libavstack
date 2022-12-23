@@ -7,12 +7,16 @@ import android.util.Log;
 import com.qomosoft.qomortc.signaling.WebSocketChannelClient.WebSocketChannelEvents;
 import com.qomosoft.qomortc.signaling.RoomParametersFetcher.RoomParametersFetcherEvents;
 import com.qomosoft.qomortc.signaling.WebSocketChannelClient.WebSocketConnectionState;
+import com.qomosoft.qomortc.util.AsyncHttpURLConnection;
+import com.qomosoft.qomortc.util.AsyncHttpURLConnection.AsyncHttpEvents;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
+
+import javax.annotation.Nullable;
 
 /**
  * Negotiates signaling for chatting with https://appr.tc "rooms".
@@ -31,6 +35,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelEvents 
     private static final String ROOM_LEAVE = "leave";
 
     private enum ConnectionState { NEW, CONNECTED, CLOSED, ERROR }
+    private enum MessageType { MESSAGE, LEAVE }
 
     private final Handler handler;
     private boolean initiator;
@@ -104,7 +109,15 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelEvents 
 
     // Disconnect from room and send bye messages - runs on a local looper thread.
     private void disconnectFromRoomInternal() {
-
+        Log.d(TAG, "Disconnect. Room state: " + roomState);
+        if (roomState == ConnectionState.CONNECTED) {
+            Log.d(TAG, "Closing room.");
+            sendPostMessage(MessageType.LEAVE, leaveUrl, null);
+        }
+        roomState = ConnectionState.CLOSED;
+        if (wsClient != null) {
+            wsClient.disconnect(true);
+        }
     }
 
     // Helper functions to get connection, post message and leave message URLs
@@ -264,6 +277,39 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelEvents 
                 }
             }
         });
+    }
+
+    // Send SDP or ICE candidate to a room server.
+    private void sendPostMessage(
+            final MessageType messageType, final String url, @Nullable final String message) {
+        String logInfo = url;
+        if (message != null) {
+            logInfo += ". Message: " + message;
+        }
+        Log.d(TAG, "C->GAE: " + logInfo);
+        AsyncHttpURLConnection httpConnection =
+                new AsyncHttpURLConnection("POST", url, message, new AsyncHttpEvents() {
+                    @Override
+                    public void onHttpError(String errorMessage) {
+                        reportError("GAE POST error: " + errorMessage);
+                    }
+
+                    @Override
+                    public void onHttpComplete(String response) {
+                        if (messageType == MessageType.MESSAGE) {
+                            try {
+                                JSONObject roomJson = new JSONObject(response);
+                                String result = roomJson.getString("result");
+                                if (!result.equals("SUCCESS")) {
+                                    reportError("GAE POST error: " + result);
+                                }
+                            } catch (JSONException e) {
+                                reportError("GAE POST JSON error: " + e.toString());
+                            }
+                        }
+                    }
+                });
+        httpConnection.send();
     }
 
     // Converts a JSON candidate to a Java object.
