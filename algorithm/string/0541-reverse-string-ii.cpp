@@ -35,17 +35,37 @@
 
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 using namespace std;
-
 class Solution {
 public:
     string reverseStr(string s, int k) {
-        return "";
+        int n = s.size();
+
+        int start = 0;
+        while (start < n) {
+            int end = min(start + k, n);
+            reverse(s.begin() + start, s.begin() + end);
+            start = end + k;
+        }
+
+        return s;
     }
 };
 
 int main(int argc, const char *argv[])
 {
+//1. 输入：s = "abcdefg", k = 2
+//输出："bacdfeg"
+//
+//2. 输入：s = "abcd", k = 2
+//输出："bacd"
+    string s = "abcdefg";
+//    string s = "abcd";
+    int k = 2;
+    Solution solution;
+    cout << solution.reverseStr(s, k) << endl;
+
     return 0;
 }
