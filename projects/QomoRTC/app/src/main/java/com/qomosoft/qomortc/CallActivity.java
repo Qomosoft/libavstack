@@ -241,6 +241,6 @@ public class CallActivity extends BaseActivity implements AppRTCClient.Signaling
 
     @Override
     public void onChannelError(String description) {
-
+        reportError(description);
     }
 }
