@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 project(pngdecoder)
 
+## fix arm64-v8a undefined reference to `png_init_filter_functions_neon'
+if (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "arm64-v8a")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPNG_ARM_NEON_OPT=0")
+endif()
+
 set(source_root ${PROJECT_SOURCE_DIR})
 
 set(source_files

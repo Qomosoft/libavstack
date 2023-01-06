@@ -2,10 +2,17 @@ cmake_minimum_required(VERSION 3.10)
 
 project("pngviewer")
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/3rdparty/libpng)
+set(CMAKE_CXX_STANDARD 14)
 
 find_library(log-lib log)
 
-add_library(pngviewer SHARED pngviewer_jni.cpp)
+add_subdirectory(${PROJECT_SOURCE_DIR}/3rdparty/libpng)
+add_subdirectory(${PROJECT_SOURCE_DIR}/librenderer)
 
-target_link_libraries(pngviewer ${log-lib} z pngdecoder)
+include_directories(
+        ${PROJECT_SOURCE_DIR}/3rdparty/libpng
+        ${PROJECT_SOURCE_DIR}/librenderer
+        ${PROJECT_SOURCE_DIR}/libcommon)
+
+add_library(pngviewer SHARED pngviewer_jni.cpp)
+target_link_libraries(pngviewer ${log-lib} z android GLESv2 EGL pngdecoder renderer)
