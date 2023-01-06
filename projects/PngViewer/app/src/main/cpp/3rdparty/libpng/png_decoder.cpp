@@ -16,6 +16,7 @@ int PngPicDecoder::openFile(char *pngFilePath) {
 	rewind(pngFile);
 	compressedData = new byte[data_length];
 	actualSize = fread(compressedData, 1, data_length, pngFile);
+    return 0;
 }
 
 RawImageData PngPicDecoder::getRawImageData(){
