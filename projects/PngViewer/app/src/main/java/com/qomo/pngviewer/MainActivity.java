@@ -4,20 +4,32 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.qomo.pngviewer.utils.AssetUtils;
+
+import java.io.File;
+
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
     private static final String TAG = "MainActivity";
+    private static final String pngFileName = "pi.png";
     private SurfaceView pngSurfaceView;
     private PngViewer pngViewer;
-    private String pngPath = "/sdcard/1.png";
+    private String pngPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        preparePng();
         initViews();
+    }
+
+    private void preparePng() {
+        pngPath = getExternalFilesDir(null).getAbsolutePath() + File.separator + pngFileName;
+        if (AssetUtils.copyAsset(getAssets(), pngFileName, pngPath, false) != 0) Log.e(TAG, "copyAsset failed");
     }
 
     @Override
