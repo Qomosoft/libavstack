@@ -33,6 +33,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -55,6 +56,39 @@ public:
 
         return -1;
     }
+
+    int strStrI(string haystack, string needle) {
+        vector<int> next = build_next(needle);
+        int n = haystack.size(), i = 0;
+        int m = needle.size(), j = 0;
+
+        while (j < m && i < n) {
+            if (0 > j || haystack[i] == needle[j]) {
+                ++i, ++j;
+            } else {
+                j = next[j];
+            }
+        }
+
+        return j == m ? i - j : -1;
+    }
+
+private:
+    vector<int> build_next(const string &p) {
+        int m = p.size();
+        vector<int> next(m);
+        int j = 0, t = next[0] = -1;
+        while (j < m - 1) {
+            if (0 > t || p[j] == p[t]) {
+                ++j, ++t;
+                next[j] = (p[j] != p[t] ? t : next[t]);
+            } else {
+                t = next[t];
+            }
+        }
+
+        return next;
+    }
 };
 
 int main(int argc, const char *argv[])
@@ -64,5 +98,6 @@ int main(int argc, const char *argv[])
 //    string haystack = "hhleetcode", needle = "lee";
     Solution solution;
     cout << solution.strStr(haystack, needle) << endl;
+    cout << solution.strStrI(haystack, needle) << endl;
     return 0;
 }
