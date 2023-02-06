@@ -40,6 +40,7 @@
 
 #include <iostream>
 #include <vector>
+#include <stack>
 
 using namespace std;
 
@@ -60,7 +61,7 @@ struct TreeNode {
     TreeNode *left;
     TreeNode *right;
     TreeNode() : val(0), left(nullptr), right(nullptr) {}
-    TreeNode(int val, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
 };
 
 class Solution {
@@ -76,4 +77,22 @@ public:
 
 private:
     vector<int> result_;
+};
+class SolutionI {
+public:
+    vector<int> postorderTraversal(TreeNode* root) {
+        vector<int> result;
+        stack<TreeNode*> stk;
+        if (!root) return result;
+        stk.push(root);
+        while (!stk.empty()) {
+            TreeNode *node = stk.top();
+            stk.pop();
+            result.push_back(node->val);
+            if (node->left) stk.push(node->left);
+            if (node->right) stk.push(node->right);
+        }
+        reverse(result.begin(), result.end());
+        return result;
+    }
 };

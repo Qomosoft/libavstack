@@ -54,6 +54,7 @@
 
 #include <iostream>
 #include <vector>
+#include <stack>
 
 using namespace std;
 
@@ -89,4 +90,24 @@ public:
 
 private:
     vector<int> result_;
+};
+
+class SolutionI {
+public:
+    vector<int> preorderTraversal(TreeNode* root) {
+        vector<int> result;
+        stack<TreeNode*> st;
+        if (!root) return result;
+
+        st.push(root);
+        while (!st.empty()) {
+            TreeNode *cur = st.top();
+            st.pop();
+            result.push_back(cur->val);
+            if (cur->right) st.push(cur->right);
+            if (cur->left) st.push(cur->left);
+        }
+
+        return result;
+    }
 };
