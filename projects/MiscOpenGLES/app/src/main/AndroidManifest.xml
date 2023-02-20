@@ -13,6 +13,9 @@
             android:name=".activity.QomoSurfaceViewActivity"
             android:exported="false" />
         <activity
+            android:name=".activity.QomoGLSurfaceViewActivity"
+            android:exported="false" />
+        <activity
             android:name=".activity.MainActivity"
             android:exported="true">
             <intent-filter>

@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
 import com.qomo.miscopengles.R;
+import com.qomo.miscopengles.view.QomoSurfaceView;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -26,9 +27,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Intent intent = new Intent();
         switch (v.getId()) {
             case R.id.ll_glsurfaceview_example:
-                intent.setClass(this, QomoSurfaceViewActivity.class);
+                intent.setClass(this, QomoGLSurfaceViewActivity.class);
                 break;
             case R.id.ll_surfaceview_example:
+                intent.setClass(this, QomoSurfaceViewActivity.class);
                 break;
             default:
                 break;
