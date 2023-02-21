@@ -1,61 +1,46 @@
 package com.qomo.miscopengles.activity;
 
-import android.opengl.EGL14;
-import android.opengl.EGLDisplay;
-import android.opengl.GLES20;
+import android.opengl.GLES31;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.SurfaceHolder;
 
-import com.qomo.miscopengles.egl.EglBase;
-import com.qomo.miscopengles.view.QomoSurfaceView;
+import com.qomo.miscopengles.view.EGL14SurfaceView;
 
-public class QomoSurfaceViewActivity extends AppCompatActivity implements SurfaceHolder.Callback {
+public class QomoSurfaceViewActivity extends AppCompatActivity {
     private static final String TAG = "QomoSurfaceViewActivity";
-    private EglBase eglBase;
-    private Handler renderThreadHandler;
-    private QomoSurfaceView qomoSurfaceView;
+    private EGL14SurfaceView qomoSurfaceView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        qomoSurfaceView = new QomoSurfaceView(this);
-        qomoSurfaceView.getHolder().addCallback(this);
+        qomoSurfaceView = new EGL14SurfaceView(this);
         setContentView(qomoSurfaceView);
-        final HandlerThread renderThread = new HandlerThread("EglRenderer");
-        renderThread.start();
-        renderThreadHandler = new Handler(renderThread.getLooper());
-        postOnRenderThread(() -> eglBase = EglBase.create());
+        setupGLSurface(qomoSurfaceView);
     }
 
-    @Override
-    public void surfaceCreated(@NonNull SurfaceHolder holder) {
-        Log.i(TAG, "surfaceCreated");
-        postOnRenderThread(() -> {
-            eglBase.createSurface(holder.getSurface());
-            eglBase.makeCurrent();
-            GLES20.glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
-            EGLDisplay eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+    private void setupGLSurface(EGL14SurfaceView view) {
+        view.setEGLConfigChooser(8, 8, 8, 8, 24, 8);
+        view.setEGLContextClientVersion(3);
+
+        view.setRenderer(new EGL14SurfaceView.Renderer() {
+            @Override
+            public void onSurfaceCreated() {
+                GLES31.glClearColor(1.0f, 0.5f, 0.25f, 1.0f);
+                GLES31.glDisable(GLES31.GL_DEPTH_TEST);
+                GLES31.glDisable(GLES31.GL_CULL_FACE);
+            }
+
+            @Override
+            public void onSurfaceChanged(int width, int height) {
+                GLES31.glViewport(0, 0, width, height);
+            }
+
+            @Override
+            public void onDrawFrame() {
+                GLES31.glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+                GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT);
+            }
         });
-    }
-
-    @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-        Log.i(TAG, "surfaceChanged");
-        postOnRenderThread(() -> GLES20.glViewport(0, 0, width, height));
-    }
-
-    @Override
-    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-
-    }
-
-    private void postOnRenderThread(Runnable runnable) {
-        renderThreadHandler.post(runnable);
     }
 }
