@@ -38,7 +38,7 @@ public class QomoSurfaceViewActivity extends AppCompatActivity {
 
             @Override
             public void onDrawFrame() {
-                GLES20.glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+                GLES20.glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
             }
         });

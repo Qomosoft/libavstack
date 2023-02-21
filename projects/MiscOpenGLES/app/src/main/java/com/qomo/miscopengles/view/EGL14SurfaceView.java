@@ -346,7 +346,8 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
         private Condition condition = lock.newCondition();
         private boolean ready = false;
         private RenderContext egl = null;
-        private EGLSurfaceBase windowSurface = null;
+        //private EGLSurfaceBase windowSurface = null;
+        private EGLSurface windowSurface;
         private SurfaceHolder surfaceHolder;
 
         public RenderThread(SurfaceHolder holder) {
@@ -413,15 +414,18 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
         /* --- messages handling --- */
 
         private void surfaceCreated() {
-            windowSurface = new EGLWindowSurface(egl, surfaceHolder.getSurface());
-            windowSurface.makeCurrent();
+            //windowSurface = new EGLWindowSurface(egl, surfaceHolder.getSurface());
+            //windowSurface.makeCurrent();
+            windowSurface = egl.createWindowSurface(surfaceHolder.getSurface());
+            egl.makeUnCurrent();
             renderer.onSurfaceCreated();
 
             checkGLError("surfaceCreated");
         }
 
         private void surfaceChanged(int width, int height) {
-            windowSurface.makeCurrent();
+            //windowSurface.makeCurrent();
+            egl.makeCurrent(windowSurface);
             renderer.onSurfaceChanged(width, height);
 
             checkGLError("surfaceChanged");
@@ -429,8 +433,10 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
 
         private void drawFrame() {
             renderer.onDrawFrame();
-            windowSurface.makeCurrent();
-            windowSurface.swapBuffers();
+            //windowSurface.makeCurrent();
+            //windowSurface.swapBuffers();
+            egl.makeCurrent(windowSurface);
+            egl.swapBuffers(windowSurface);
 
             checkGLError("drawFrame");
         }
