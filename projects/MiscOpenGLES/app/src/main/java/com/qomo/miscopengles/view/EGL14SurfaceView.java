@@ -29,21 +29,6 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
     private EGLContextFactory contextFactory;
     private EGLWindowSurfaceFactory windowSurfaceFactory;
     private Renderer renderer;
-    //var configChooser: EGLConfigChooser?
-    //get() = renderThread.configChooser
-    //set(value) { renderThread.configChooser = value }
-    //
-    //var contextFactory: EGLContextFactory?
-    //get() = renderThread.contextFactory
-    //set(value) { renderThread.contextFactory = value }
-    //
-    //var windowSurfaceFactory: EGLWindowSurfaceFactory?
-    //get() = renderThread.windowSurfaceFactory
-    //set(value) { renderThread.windowSurfaceFactory = value }
-    //
-    //var renderer: Renderer?
-    //get() = renderThread.renderer
-    //set(value) { renderThread.renderer = value }
 
     public EGL14SurfaceView(Context context) {
         super(context);
