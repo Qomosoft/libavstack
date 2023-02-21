@@ -25,37 +25,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callback2 {
     private static final String TAG = "EGL14SurfaceView";
     private SurfaceHolder holder;
-    private EGLConfigChooser configChooser;
-    private EGLContextFactory contextFactory;
-    private EGLWindowSurfaceFactory windowSurfaceFactory;
     private Renderer renderer;
 
     public EGL14SurfaceView(Context context) {
         super(context);
 
         holder = getHolder();
-        //Default window surface factory
-        windowSurfaceFactory = new EGLWindowSurfaceFactory() {
-            @Override
-            public EGLSurface createWindowSurface(EGLDisplay eglDisplay, EGLConfig eglConfig, Object nativeWindow) {
-                boolean notSurface = !(nativeWindow instanceof  Surface);
-                boolean notSurfaceTexture = !(nativeWindow instanceof SurfaceTexture);
-                if (notSurface && notSurfaceTexture) {
-                    Log.e(TAG, "Invalid surface: " + nativeWindow);
-                    return null;
-                }
-                int[] surfaceAttribs = new int[] {EGL14.EGL_NONE};
-                return EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindow, surfaceAttribs, 0);
-            }
-
-            @Override
-            public void destroySurface(EGLDisplay eglDisplay, EGLSurface eglSurface) {
-                if (!EGL14.eglDestroySurface(eglDisplay, eglSurface)) {
-                    Log.e(TAG, "eglDestroySurface failed");
-                }
-            }
-        };
-        renderThread.windowSurfaceFactory = windowSurfaceFactory;
 
         setWillNotDraw(false);
         holder.setFormat(PixelFormat.RGB_888);
@@ -65,20 +40,6 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
     public void setRenderer(Renderer renderer) {
         this.renderer = renderer;
         renderThread.renderer = renderer;
-    }
-
-    interface EGLConfigChooser {
-        EGLConfig chooseConfig(EGLDisplay eglDisplay);
-    }
-
-    interface EGLContextFactory {
-        EGLContext createContext(EGLDisplay eglDisplay, EGLConfig eglConfig);
-        void destroyContext(EGLDisplay eglDisplay, EGLContext eglContext);
-    }
-
-    interface EGLWindowSurfaceFactory {
-        EGLSurface createWindowSurface(EGLDisplay eglDisplay, EGLConfig eglConfig, Object nativeWindow);
-        void destroySurface(EGLDisplay eglDisplay, EGLSurface eglSurface);
     }
 
     public interface Renderer {
@@ -91,21 +52,37 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
         private EGLDisplay display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         private EGLConfig config;
         private EGLContext context;
-        private EGLContextFactory contextFactory;
-        private EGLWindowSurfaceFactory windowSurfaceFactory;
-        public RenderContext(EGLConfigChooser configChooser, EGLContextFactory contextFactory,
-                      EGLWindowSurfaceFactory windowSurfaceFactory) {
+        public RenderContext() {
             int[] version = new int[2];
             EGL14.eglInitialize(display, version, 0, version, 1);
-            this.contextFactory = contextFactory;
-            this.windowSurfaceFactory = windowSurfaceFactory;
-            config = configChooser.chooseConfig(display);
-            context = contextFactory.createContext(display, config);
+            int renderableType = EGL14.EGL_OPENGL_ES2_BIT | EGLExt.EGL_OPENGL_ES3_BIT_KHR;
+            int[] configAttribs = new int[] {
+                EGL14.EGL_RENDERABLE_TYPE, renderableType,
+                EGL14.EGL_RED_SIZE, 8,
+                EGL14.EGL_GREEN_SIZE, 8,
+                EGL14.EGL_BLUE_SIZE, 8,
+                EGL14.EGL_ALPHA_SIZE, 8,
+                EGL14.EGL_DEPTH_SIZE, 24,
+                EGL14.EGL_STENCIL_SIZE, 8,
+                EGL14.EGL_NONE
+            };
+            EGLConfig[] configs = new EGLConfig[] {null};
+            int[] numConfigs = new int[] {1};
+
+            EGL14.eglChooseConfig(display, configAttribs, 0, configs, 0, configs.length, numConfigs, 0);
+            config = configs[0];
+
+            int[] contextAttribs = new int[] {
+                EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
+                EGL14.EGL_NONE
+            };
+
+            context = EGL14.eglCreateContext(display, config, EGL14.EGL_NO_CONTEXT, contextAttribs, 0);
         }
 
         public void release() {
             EGL14.eglMakeCurrent(display, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
-            contextFactory.destroyContext(display, context);
+            EGL14.eglDestroyContext(display, context);
             EGL14.eglReleaseThread();
             EGL14.eglTerminate(display);
         }
@@ -115,13 +92,22 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
                 throw new RuntimeException("Invalid surface: " + surface);
             }
 
-            EGLSurface eglSurface = windowSurfaceFactory.createWindowSurface(display, config, surface);
+            //EGLSurface eglSurface = windowSurfaceFactory.createWindowSurface(display, config, surface);
+            if (!(surface instanceof Surface || surface instanceof SurfaceTexture)) {
+                Log.e(TAG, "Invalid surface: " + surface);
+                return null;
+            }
+            int[] surfaceAttribs = new int[] {EGL14.EGL_NONE};
+            EGLSurface eglSurface = EGL14.eglCreateWindowSurface(display, config, surface, surfaceAttribs, 0);
             checkGLError("eglCreateWindowSurface");
             return eglSurface;
         }
 
         public void releaseSurface(EGLSurface eglSurface) {
-            windowSurfaceFactory.destroySurface(display, eglSurface);
+            //windowSurfaceFactory.destroySurface(display, eglSurface);
+            if (!EGL14.eglDestroySurface(display, eglSurface)) {
+                Log.e(TAG, "eglDestroySurface failed");
+            }
         }
 
         public void makeCurrent(EGLSurface drawSurface, EGLSurface readSurface) {
@@ -227,54 +213,6 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
         requestRender();
     }
 
-    /** Specify a simple EGL14 Config chooser given its buffer channels bits size. */
-    public void setEGLConfigChooser(int redSize, int greenSize, int blueSize, int alphaSize, int depthSize, int stencilSize) {
-        configChooser = new EGLConfigChooser() {
-            @Override
-            public EGLConfig chooseConfig(EGLDisplay eglDisplay) {
-                int renderableType = EGL14.EGL_OPENGL_ES2_BIT | EGLExt.EGL_OPENGL_ES3_BIT_KHR;
-                int[] configAttribs = new int[] {
-                    EGL14.EGL_RENDERABLE_TYPE, renderableType,
-                    EGL14.EGL_RED_SIZE, redSize,
-                    EGL14.EGL_GREEN_SIZE, greenSize,
-                    EGL14.EGL_BLUE_SIZE, blueSize,
-                    EGL14.EGL_ALPHA_SIZE, alphaSize,
-                    EGL14.EGL_DEPTH_SIZE, depthSize,
-                    EGL14.EGL_STENCIL_SIZE, stencilSize,
-                    EGL14.EGL_NONE
-                };
-                EGLConfig[] configs = new EGLConfig[] {null};
-                int[] numConfigs = new int[] {1};
-
-                EGL14.eglChooseConfig(eglDisplay, configAttribs, 0, configs, 0, configs.length, numConfigs, 0);
-                return configs[0];
-            }
-        };
-        renderThread.configChooser = configChooser;
-    }
-
-    /** Specify a simple EGL14 Context Factory given a glES version number. */
-    public void setEGLContextClientVersion(int version) {
-        contextFactory = new EGLContextFactory() {
-            @Override
-            public EGLContext createContext(EGLDisplay eglDisplay, EGLConfig eglConfig) {
-                int[] contextAttribs = new int[] {
-                    EGL14.EGL_CONTEXT_CLIENT_VERSION, version,
-                    EGL14.EGL_NONE
-                };
-                EGLConfig config = configChooser.chooseConfig(eglDisplay);
-                EGLContext ctx = EGL14.eglCreateContext(eglDisplay, config, EGL14.EGL_NO_CONTEXT, contextAttribs, 0);
-                return ctx;
-            }
-
-            @Override
-            public void destroyContext(EGLDisplay eglDisplay, EGLContext eglContext) {
-                EGL14.eglDestroyContext(eglDisplay, eglContext);
-            }
-        };
-        renderThread.contextFactory = contextFactory;
-    }
-
     /** Post an event to the render thread. */
     public void queueEvent(Runnable r) {
         // [ don't even know if it works ]
@@ -338,15 +276,11 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
         }
 
         private RenderHandler handler = null;
-        private EGLConfigChooser configChooser = null;
-        private EGLContextFactory contextFactory = null;
-        private EGLWindowSurfaceFactory windowSurfaceFactory = null;
         private Renderer renderer = null;
         private ReentrantLock lock = new ReentrantLock();
         private Condition condition = lock.newCondition();
         private boolean ready = false;
         private RenderContext egl = null;
-        //private EGLSurfaceBase windowSurface = null;
         private EGLSurface windowSurface;
         private SurfaceHolder surfaceHolder;
 
@@ -385,7 +319,7 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
             }
 
             // ? might be init outside the thread ?
-            egl = new RenderContext(configChooser, contextFactory, windowSurfaceFactory);
+            egl = new RenderContext();
 
             // *must* be initialized inside the thread.
             handler = new RenderHandler(this);
@@ -414,8 +348,6 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
         /* --- messages handling --- */
 
         private void surfaceCreated() {
-            //windowSurface = new EGLWindowSurface(egl, surfaceHolder.getSurface());
-            //windowSurface.makeCurrent();
             windowSurface = egl.createWindowSurface(surfaceHolder.getSurface());
             egl.makeUnCurrent();
             renderer.onSurfaceCreated();
@@ -433,8 +365,6 @@ public class EGL14SurfaceView extends SurfaceView implements SurfaceHolder.Callb
 
         private void drawFrame() {
             renderer.onDrawFrame();
-            //windowSurface.makeCurrent();
-            //windowSurface.swapBuffers();
             egl.makeCurrent(windowSurface);
             egl.swapBuffers(windowSurface);
 
