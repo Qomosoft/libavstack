@@ -20,6 +20,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void initViews() {
         findViewById(R.id.ll_glsurfaceview_example).setOnClickListener(this);
         findViewById(R.id.ll_surfaceview_example).setOnClickListener(this);
+        findViewById(R.id.ll_my_glsurfaceview_example).setOnClickListener(this);
     }
 
     @Override
@@ -31,6 +32,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.ll_surfaceview_example:
                 intent.setClass(this, QomoSurfaceViewActivity.class);
+                break;
+            case R.id.ll_my_glsurfaceview_example:
+                intent.setClass(this, MyGLSurfaceViewActivity.class);
                 break;
             default:
                 break;
