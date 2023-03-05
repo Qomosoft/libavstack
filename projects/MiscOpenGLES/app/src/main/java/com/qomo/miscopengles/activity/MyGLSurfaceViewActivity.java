@@ -8,21 +8,20 @@ import static android.opengl.GLES20.glViewport;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import com.qomo.miscopengles.view.GLSurfaceView;
+import com.qomo.miscopengles.view.MyGLSurfaceView;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class MyGLSurfaceViewActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
-    private GLSurfaceView glSurfaceView;
+public class MyGLSurfaceViewActivity extends AppCompatActivity implements MyGLSurfaceView.Renderer {
+    private MyGLSurfaceView glSurfaceView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        glSurfaceView = new GLSurfaceView(this);
+        glSurfaceView = new MyGLSurfaceView(this);
         glSurfaceView.setEGLContextClientVersion(2);
         glSurfaceView.setRenderer(this);
-        glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         setContentView(glSurfaceView);
     }
 
