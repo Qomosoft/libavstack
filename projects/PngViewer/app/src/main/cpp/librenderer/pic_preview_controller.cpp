@@ -7,10 +7,8 @@ static const std::vector<uint8_t> kGreen = {0, 0xff, 0, 0xff};
 static const std::vector<uint8_t> kBlue = {0, 0, 0xff, 0xff};
 
 PicPreviewController::PicPreviewController() :
-		_msg(MSG_NONE), previewSurface(0), eglCore(0) {
+        previewSurface(0), eglCore(0) {
 	LOGI("VideoDutePlayerController instance created");
-	pthread_mutex_init(&mLock, NULL);
-	pthread_cond_init(&mCondition, NULL);
 	renderer = new PicPreviewRender();
 	this->screenWidth = 720;
 	this->screenHeight = 720;
@@ -18,83 +16,78 @@ PicPreviewController::PicPreviewController() :
 
 PicPreviewController::~PicPreviewController() {
 	LOGI("VideoDutePlayerController instance destroyed");
-	pthread_mutex_destroy(&mLock);
-	pthread_cond_destroy(&mCondition);
 }
 
 bool PicPreviewController::start(char* spriteFilePath) {
 	LOGI("Creating VideoDutePlayerController thread");
-	pthread_create(&_threadId, 0, threadStartCallback, this);
+    render_thread_ = std::make_unique<std::thread>(&PicPreviewController::renderLoop, this);
 	return true;
 }
 
 void PicPreviewController::stop() {
 	LOGI("Stopping VideoDutePlayerController Render thread");
 	/*send message to render thread to stop rendering*/
-	pthread_mutex_lock(&mLock);
-	_msg = MSG_RENDER_LOOP_EXIT;
-	pthread_cond_signal(&mCondition);
-	pthread_mutex_unlock(&mLock);
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+		msg_queue_.push(MSG_RENDER_LOOP_EXIT);
+    }
+    cv_.notify_all();
 
 	LOGI("we will join render thread stop");
-	pthread_join(_threadId, 0);
+    render_thread_->join();
 	LOGI("VideoDutePlayerController Render thread stopped");
 }
 
 void PicPreviewController::setWindow(ANativeWindow *window) {
 	/*notify render thread that window has changed*/
-	pthread_mutex_lock(&mLock);
-	_msg = MSG_WINDOW_SET;
-	_window = window;
-	pthread_cond_signal(&mCondition);
-	pthread_mutex_unlock(&mLock);
+    {
+        std::unique_lock<std::mutex> lock;
+		msg_queue_.push(MSG_WINDOW_SET);
+        _window = window;
+    }
+    cv_.notify_one();
 }
 
 void PicPreviewController::resetSize(int width, int height) {
 	LOGI("VideoDutePlayerController::resetSize width:%d; height:%d", width, height);
-	pthread_mutex_lock(&mLock);
-	this->screenWidth = width;
-	this->screenHeight = height;
-	renderer->resetRenderSize(0, 0, width, height);
-	pthread_cond_signal(&mCondition);
-	pthread_mutex_unlock(&mLock);
-}
-
-void* PicPreviewController::threadStartCallback(void *myself) {
-	PicPreviewController *controller = (PicPreviewController*) myself;
-	controller->renderLoop();
-	pthread_exit(0);
-	return 0;
+    {
+        std::unique_lock<std::mutex> lock;
+        this->screenWidth = width;
+        this->screenHeight = height;
+        renderer->resetRenderSize(0, 0, width, height);
+    }
+    cv_.notify_one();
 }
 
 void PicPreviewController::renderLoop() {
 	bool renderingEnabled = true;
 	LOGI("renderLoop()");
 	while (renderingEnabled) {
-		pthread_mutex_lock(&mLock);
+        std::unique_lock<std::mutex> lock;
 		/*process incoming messages*/
-        LOGI("looping msg: %d", _msg);
-		switch (_msg) {
-		case MSG_WINDOW_SET:
-			initialize();
-			break;
-		case MSG_RENDER_LOOP_EXIT:
-			renderingEnabled = false;
-			destroy();
-			break;
-		default:
-			break;
+		if (!msg_queue_.empty()) {
+			int msg = msg_queue_.front();
+			msg_queue_.pop();
+			LOGI("looping msg: %d", msg);
+			switch (msg) {
+				case MSG_WINDOW_SET:
+					initialize();
+					break;
+				case MSG_RENDER_LOOP_EXIT:
+					renderingEnabled = false;
+					destroy();
+					break;
+				default:
+					break;
+			}
 		}
-		_msg = MSG_NONE;
 
 		if (eglCore) {
 			eglCore->makeCurrent(previewSurface);
 			this->drawFrame();
-			pthread_cond_wait(&mCondition, &mLock);
-			usleep(100 * 1000);
+            cv_.wait(lock, [=] { return !renderingEnabled || msg_queue_.empty(); });
+			if (!renderingEnabled && msg_queue_.empty()) break;
 		}
-
-		pthread_mutex_unlock(&mLock);
 	}
 	LOGI("Render loop exits");
 
@@ -107,13 +100,6 @@ bool PicPreviewController::initialize() {
 	previewSurface = eglCore->createWindowSurface(_window);
 	eglCore->makeCurrent(previewSurface);
 
-//	picPreviewTexture = new PicPreviewTexture();
-//	bool createTexFlag = picPreviewTexture->createTexture();
-//	if(!createTexFlag){
-//		LOGE("createTexFlag is failed...");
-//		destroy();
-//		return false;
-//	}
     texture = createTexture();
 	this->updateTexImage();
 
@@ -155,7 +141,8 @@ void PicPreviewController::updateTexImage() {
             }
         }
     }
-//    picPreviewTexture->updateTexImage((byte*) data.data(), width, height);
+
+	// load rgba data to texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     if (checkGlError("glBindTexture")) {
