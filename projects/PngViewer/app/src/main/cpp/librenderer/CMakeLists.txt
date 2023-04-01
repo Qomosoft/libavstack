@@ -6,6 +6,7 @@ set(source_files
     ${source_root}/pic_preview_controller.cpp
     ${source_root}/pic_preview_render.cpp
     ${source_root}/logging.cpp
+    ${source_root}/qomo_egl.cpp
     ${source_root}/egl_core.cpp)
 
 add_library(${PROJECT_NAME} STATIC ${source_files})

@@ -3,6 +3,7 @@
 
 #include "pic_preview_render.h"
 #include "egl_core.h"
+#include "qomo_egl.h"
 
 #include <queue>
 #include <unistd.h>
@@ -42,6 +43,7 @@ private:
 	ANativeWindow* _window;
 
 	EGLCore* eglCore;
+	std::unique_ptr<QomoEgl> egl_;
 	EGLSurface previewSurface;
     GLint texture;
 

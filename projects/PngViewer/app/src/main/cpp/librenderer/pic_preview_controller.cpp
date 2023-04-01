@@ -7,7 +7,7 @@ static const std::vector<uint8_t> kGreen = {0, 0xff, 0, 0xff};
 static const std::vector<uint8_t> kBlue = {0, 0, 0xff, 0xff};
 
 PicPreviewController::PicPreviewController() :
-        previewSurface(0), eglCore(0) {
+        previewSurface(0), eglCore(0), egl_(nullptr) {
 	LOGI("VideoDutePlayerController instance created");
 	renderer = new PicPreviewRender();
 	this->screenWidth = 720;
@@ -41,7 +41,7 @@ void PicPreviewController::stop() {
 void PicPreviewController::setWindow(ANativeWindow *window) {
 	/*notify render thread that window has changed*/
     {
-        std::unique_lock<std::mutex> lock;
+        std::unique_lock<std::mutex> lock(mutex_);
 		msg_queue_.push(MSG_WINDOW_SET);
         _window = window;
     }
@@ -51,7 +51,7 @@ void PicPreviewController::setWindow(ANativeWindow *window) {
 void PicPreviewController::resetSize(int width, int height) {
 	LOGI("VideoDutePlayerController::resetSize width:%d; height:%d", width, height);
     {
-        std::unique_lock<std::mutex> lock;
+        std::unique_lock<std::mutex> lock(mutex_);
         this->screenWidth = width;
         this->screenHeight = height;
         renderer->resetRenderSize(0, 0, width, height);
@@ -62,8 +62,8 @@ void PicPreviewController::resetSize(int width, int height) {
 void PicPreviewController::renderLoop() {
 	bool renderingEnabled = true;
 	LOGI("renderLoop()");
-	while (renderingEnabled) {
-        std::unique_lock<std::mutex> lock;
+	while (true) {
+        std::unique_lock<std::mutex> lock(mutex_);
 		/*process incoming messages*/
 		if (!msg_queue_.empty()) {
 			int msg = msg_queue_.front();
@@ -82,12 +82,15 @@ void PicPreviewController::renderLoop() {
 			}
 		}
 
-		if (eglCore) {
-			eglCore->makeCurrent(previewSurface);
+//		if (eglCore) {
+		if (egl_) {
+//			eglCore->makeCurrent(previewSurface);
+			egl_->MakeCurrent(previewSurface);
 			this->drawFrame();
-            cv_.wait(lock, [=] { return !renderingEnabled || msg_queue_.empty(); });
-			if (!renderingEnabled && msg_queue_.empty()) break;
 		}
+
+		cv_.wait(lock, [=] { return !renderingEnabled || !msg_queue_.empty(); });
+		if (!renderingEnabled) break;
 	}
 	LOGI("Render loop exits");
 
@@ -95,10 +98,14 @@ void PicPreviewController::renderLoop() {
 }
 
 bool PicPreviewController::initialize() {
-	eglCore = new EGLCore();
-	eglCore->init();
-	previewSurface = eglCore->createWindowSurface(_window);
-	eglCore->makeCurrent(previewSurface);
+//	eglCore = new EGLCore();
+//	eglCore->init();
+//	previewSurface = eglCore->createWindowSurface(_window);
+//	eglCore->makeCurrent(previewSurface);
+	egl_ = std::make_unique<QomoEgl>();
+	egl_->Initialize();
+	previewSurface = egl_->CreateWindowSurface(_window);
+	egl_->MakeCurrent(previewSurface);
 
     texture = createTexture();
 	this->updateTexImage();
@@ -119,10 +126,15 @@ void PicPreviewController::destroy() {
 		delete renderer;
 		renderer = NULL;
 	}
-	if(eglCore){
-		eglCore->releaseSurface(previewSurface);
-		eglCore->release();
-		eglCore = NULL;
+//	if(eglCore){
+//		eglCore->releaseSurface(previewSurface);
+//		eglCore->release();
+//		eglCore = NULL;
+//	}
+	if (egl_) {
+		egl_->ReleaseSurface(previewSurface);
+		egl_->Release();
+		egl_ = nullptr;
 	}
 	return;
 }
@@ -153,8 +165,11 @@ void PicPreviewController::updateTexImage() {
 
 void PicPreviewController::drawFrame() {
     renderer->render();
-	if (!eglCore->swapBuffers(previewSurface)) {
-		LOGE("eglSwapBuffers() returned error %d", eglGetError());
+//	if (!eglCore->swapBuffers(previewSurface)) {
+//		LOGE("eglSwapBuffers() returned error %d", eglGetError());
+//	}
+	if (egl_->SwapBuffers(previewSurface) != 0) {
+		LOGE("eglSwapBuffers() returned error 0x%x", eglGetError());
 	}
 }
 
