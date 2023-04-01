@@ -38,6 +38,7 @@ JNIEXPORT void JNICALL
 Java_com_qomo_pngviewer_PngViewer_resetSize(JNIEnv *env, jobject thiz, jint width,
                                             jint height) {
     if (nullptr != controller) {
+        LOGI("resetSize: %dx%d", width, height);
         controller->resetSize(width, height);
     } else {
         LOGE("controller is null");

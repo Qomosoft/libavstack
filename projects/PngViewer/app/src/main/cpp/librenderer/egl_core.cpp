@@ -25,19 +25,6 @@ void EGLCore::releaseSurface(EGLSurface eglSurface) {
 	eglSurface = EGL_NO_SURFACE;
 }
 
-EGLContext EGLCore::getContext(){
-	LOGI("return EGLCore getContext...");
-	return context;
-}
-
-EGLDisplay EGLCore::getDisplay(){
-	return display;
-}
-
-EGLConfig EGLCore::getConfig(){
-	return config;
-}
-
 EGLSurface EGLCore::createWindowSurface(ANativeWindow* _window) {
 	EGLSurface surface = NULL;
 	EGLint format;
@@ -53,35 +40,12 @@ EGLSurface EGLCore::createWindowSurface(ANativeWindow* _window) {
 	return surface;
 }
 
-EGLSurface EGLCore::createOffscreenSurface(int width, int height) {
-	EGLSurface surface;
-	EGLint PbufferAttributes[] = { EGL_WIDTH, width, EGL_HEIGHT, height, EGL_NONE, EGL_NONE };
-	if (!(surface = eglCreatePbufferSurface(display, config, PbufferAttributes))) {
-		LOGE("eglCreatePbufferSurface() returned error %d", eglGetError());
-	}
-	return surface;
-}
-
-int EGLCore::setPresentationTime(EGLSurface surface, khronos_stime_nanoseconds_t nsecs) {
-	pfneglPresentationTimeANDROID(display, surface, nsecs);
-}
-
-int EGLCore::querySurface(EGLSurface surface, int what) {
-	int value = -1;
-	eglQuerySurface(display, surface, what, &value);
-	return value;
-}
-
 bool EGLCore::swapBuffers(EGLSurface eglSurface) {
 	return eglSwapBuffers(display, eglSurface);
 }
 
 bool EGLCore::makeCurrent(EGLSurface eglSurface) {
 	return eglMakeCurrent(display, eglSurface, eglSurface, context);
-}
-
-void EGLCore::doneCurrent() {
-	eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 }
 
 bool EGLCore::init() {

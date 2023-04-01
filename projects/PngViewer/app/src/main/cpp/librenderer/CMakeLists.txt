@@ -5,7 +5,6 @@ set(source_root ${PROJECT_SOURCE_DIR})
 set(source_files
     ${source_root}/pic_preview_controller.cpp
     ${source_root}/pic_preview_render.cpp
-    ${source_root}/rgba_frame.cpp
     ${source_root}/egl_core.cpp
     ${source_root}/pic_preview_texture.cpp)
 

@@ -72,6 +72,7 @@ void PicPreviewController::renderLoop() {
 	while (renderingEnabled) {
 		pthread_mutex_lock(&mLock);
 		/*process incoming messages*/
+        LOGI("looping msg: %d", _msg);
 		switch (_msg) {
 		case MSG_WINDOW_SET:
 			initialize();

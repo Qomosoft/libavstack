@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
+        Log.i(TAG, "surfaceCreated");
         pngViewer = new PngViewer();
         pngViewer.init(pngPath);
         pngViewer.setSurface(holder.getSurface());
@@ -57,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+        Log.i(TAG, "surfaceChanged width=" + width + ", height=" + height);
         pngViewer.resetSize(width, height);
     }
 

@@ -57,7 +57,7 @@ void PicPreviewRender::render(){
 	static const GLfloat texCoords[] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f };
 	glVertexAttribPointer(ATTRIBUTE_TEXCOORD, 2, GL_FLOAT, 0, 0, texCoords);
 	glEnableVertexAttribArray(ATTRIBUTE_TEXCOORD);
-	picPreviewTexture->bindTexture(uniformSampler);
+//	picPreviewTexture->bindTexture(uniformSampler);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
@@ -93,7 +93,7 @@ int PicPreviewRender::useProgram() {
 	}
 	glUseProgram(program);
 
-	uniformSampler = glGetUniformLocation(program, "yuvTexSampler");
+//	uniformSampler = glGetUniformLocation(program, "yuvTexSampler");
 
 	return 1;
 }
