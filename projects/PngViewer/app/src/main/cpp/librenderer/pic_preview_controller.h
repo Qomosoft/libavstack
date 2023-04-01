@@ -10,7 +10,6 @@
 #include "./pic_preview_render.h"
 #include "./pic_preview_texture.h"
 #include "./egl_core.h"
-#include "png_decoder.h"
 
 class PicPreviewController {
 public:
@@ -24,8 +23,6 @@ public:
 private:
 	PicPreviewRender* renderer;
 	PicPreviewTexture* picPreviewTexture;
-
-	PngPicDecoder* decoder;
 
 	int screenWidth;
 	int screenHeight;

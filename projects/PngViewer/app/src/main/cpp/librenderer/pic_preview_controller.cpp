@@ -2,6 +2,10 @@
 
 #define LOG_TAG "PicPreviewController"
 
+static const std::vector<uint8_t> kRed = {0xff, 0, 0, 0xff};
+static const std::vector<uint8_t> kGreen = {0, 0xff, 0, 0xff};
+static const std::vector<uint8_t> kBlue = {0, 0, 0xff, 0xff};
+
 PicPreviewController::PicPreviewController() :
 		_msg(MSG_NONE), previewSurface(0), eglCore(0) {
 	LOGI("VideoDutePlayerController instance created");
@@ -10,7 +14,6 @@ PicPreviewController::PicPreviewController() :
 	renderer = new PicPreviewRender();
 	this->screenWidth = 720;
 	this->screenHeight = 720;
-	decoder = NULL;
 }
 
 PicPreviewController::~PicPreviewController() {
@@ -21,8 +24,6 @@ PicPreviewController::~PicPreviewController() {
 
 bool PicPreviewController::start(char* spriteFilePath) {
 	LOGI("Creating VideoDutePlayerController thread");
-	decoder = new PngPicDecoder();
-	decoder->openFile(spriteFilePath);
 	pthread_create(&_threadId, 0, threadStartCallback, this);
 	return true;
 }
@@ -141,18 +142,24 @@ void PicPreviewController::destroy() {
 }
 
 void PicPreviewController::updateTexImage() {
-	if (decoder) {
-		const RawImageData raw_image_data = decoder->getRawImageData();
-		LOGI("raw_image_data Meta: width is %d height is %d size is %d colorFormat is %d", raw_image_data.width, raw_image_data.height, raw_image_data.size,
-				raw_image_data.gl_color_format);
-		LOGI("colorFormat is %d", GL_RGBA);
-		picPreviewTexture->updateTexImage((byte*) raw_image_data.data, raw_image_data.width, raw_image_data.height);
-		decoder->releaseRawImageData(&raw_image_data);
-	}
+    std::vector<uint8_t> data;
+    int width = 210, height = 210;
+    for (int i = 0; i < width; ++i) {
+        for (int j = 0; j < height; ++j) {
+            if (j < height / 3) {
+                data.insert(data.end(), kRed.begin(), kRed.end());
+            } else if (j >= height / 3 && j < height * 2 / 3) {
+                data.insert(data.end(), kGreen.begin(), kGreen.end());
+            } else {
+                data.insert(data.end(), kBlue.begin(), kBlue.end());
+            }
+        }
+    }
+    picPreviewTexture->updateTexImage((byte*) data.data(), width, height);
 }
 
 void PicPreviewController::drawFrame() {
-	renderer->render();
+    renderer->render();
 	if (!eglCore->swapBuffers(previewSurface)) {
 		LOGE("eglSwapBuffers() returned error %d", eglGetError());
 	}
