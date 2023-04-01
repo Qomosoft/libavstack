@@ -1,6 +1,6 @@
-#include "./pic_preview_controller.h"
-
 #define LOG_TAG "PicPreviewController"
+
+#include "pic_preview_controller.h"
 
 static const std::vector<uint8_t> kRed = {0xff, 0, 0, 0xff};
 static const std::vector<uint8_t> kGreen = {0, 0xff, 0, 0xff};
@@ -107,17 +107,17 @@ bool PicPreviewController::initialize() {
 	previewSurface = eglCore->createWindowSurface(_window);
 	eglCore->makeCurrent(previewSurface);
 
-	picPreviewTexture = new PicPreviewTexture();
-	bool createTexFlag = picPreviewTexture->createTexture();
-	if(!createTexFlag){
-		LOGE("createTexFlag is failed...");
-		destroy();
-		return false;
-	}
-
+//	picPreviewTexture = new PicPreviewTexture();
+//	bool createTexFlag = picPreviewTexture->createTexture();
+//	if(!createTexFlag){
+//		LOGE("createTexFlag is failed...");
+//		destroy();
+//		return false;
+//	}
+    texture = createTexture();
 	this->updateTexImage();
 
-	bool isRendererInitialized = renderer->init(screenWidth, screenHeight, picPreviewTexture);
+	bool isRendererInitialized = renderer->init(screenWidth, screenHeight, texture);
 	if (!isRendererInitialized) {
 		LOGI("Renderer failed on initialized...");
 		return false;
@@ -155,7 +155,13 @@ void PicPreviewController::updateTexImage() {
             }
         }
     }
-    picPreviewTexture->updateTexImage((byte*) data.data(), width, height);
+//    picPreviewTexture->updateTexImage((byte*) data.data(), width, height);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    if (checkGlError("glBindTexture")) {
+        return;
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 }
 
 void PicPreviewController::drawFrame() {
@@ -163,4 +169,26 @@ void PicPreviewController::drawFrame() {
 	if (!eglCore->swapBuffers(previewSurface)) {
 		LOGE("eglSwapBuffers() returned error %d", eglGetError());
 	}
+}
+
+GLuint PicPreviewController::createTexture() {
+    GLuint texture;
+    glGenTextures(1, &texture);
+    if (checkGlError("createTexture")) LOGE("createTexture failed");
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    return texture;
+}
+
+bool PicPreviewController::checkGlError(const char* op) {
+    GLint error;
+    for (error = glGetError(); error; error = glGetError()) {
+        LOGI("error::after %s() glError (0x%x)\n", op, error);
+        return true;
+    }
+    return false;
 }

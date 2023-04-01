@@ -1,6 +1,7 @@
-#include "./pic_preview_render.h"
-
 #define LOG_TAG "PicPreviewRender"
+
+#include "pic_preview_render.h"
+
 enum {
 	ATTRIBUTE_VERTEX, ATTRIBUTE_TEXCOORD,
 };
@@ -11,12 +12,12 @@ PicPreviewRender::~PicPreviewRender() {
 
 }
 
-bool PicPreviewRender::init(int width, int height, PicPreviewTexture* picPreviewTexture) {
+bool PicPreviewRender::init(int width, int height, GLuint texture) {
 	this->_backingLeft = 0;
 	this->_backingTop = 0;
 	this->_backingWidth = width;
 	this->_backingHeight = height;
-	this->picPreviewTexture = picPreviewTexture;
+	this->texture = texture;
 	//初始化shaders、program、textures
 	vertShader = 0;
 	fragShader = 0;
@@ -57,7 +58,6 @@ void PicPreviewRender::render(){
 	static const GLfloat texCoords[] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f };
 	glVertexAttribPointer(ATTRIBUTE_TEXCOORD, 2, GL_FLOAT, 0, 0, texCoords);
 	glEnableVertexAttribArray(ATTRIBUTE_TEXCOORD);
-//	picPreviewTexture->bindTexture(uniformSampler);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
@@ -68,9 +68,9 @@ void PicPreviewRender::dealloc() {
 	if (fragShader)
 		glDeleteShader(fragShader);
 
-	if(picPreviewTexture){
-		picPreviewTexture->dealloc();
-	}
+    if (texture) {
+        glDeleteTextures(1, &texture);
+    }
 
 	if (program) {
 		glDeleteProgram(program);
@@ -92,8 +92,6 @@ int PicPreviewRender::useProgram() {
 		return -1;
 	}
 	glUseProgram(program);
-
-//	uniformSampler = glGetUniformLocation(program, "yuvTexSampler");
 
 	return 1;
 }

@@ -1,6 +1,6 @@
-#include "egl_core.h"
-
 #define LOG_TAG "EGLCore"
+
+#include "egl_core.h"
 
 EGLCore::EGLCore() {
 	pfneglPresentationTimeANDROID = 0;

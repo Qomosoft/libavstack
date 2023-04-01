@@ -7,9 +7,8 @@
 #include <android/native_window.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include "./pic_preview_render.h"
-#include "./pic_preview_texture.h"
-#include "./egl_core.h"
+#include "pic_preview_render.h"
+#include "egl_core.h"
 
 class PicPreviewController {
 public:
@@ -22,7 +21,7 @@ public:
 	void resetSize(int width, int height);
 private:
 	PicPreviewRender* renderer;
-	PicPreviewTexture* picPreviewTexture;
+//	PicPreviewTexture* picPreviewTexture;
 
 	int screenWidth;
 	int screenHeight;
@@ -40,6 +39,10 @@ private:
 
 	EGLCore* eglCore;
 	EGLSurface previewSurface;
+    GLint texture;
+
+    GLuint createTexture();
+	bool checkGlError(const char *op);
 
 	// Helper method for starting the thread
 	static void* threadStartCallback(void *myself);
@@ -50,7 +53,6 @@ private:
 	void updateTexImage();
 	void drawFrame();
 	void destroy();
-
 };
 
 #endif // PIC_PREVIEW_CONTROLLER_H

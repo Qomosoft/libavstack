@@ -1,9 +1,12 @@
 #ifndef PIC_PREVIEW_RENDER_H
 #define PIC_PREVIEW_RENDER_H
-#include "CommonTools.h"
+
+#define LOG_TAG "PicPreviewRender"
+
+#include "logging.h"
+
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#include "pic_preview_texture.h"
 
 //Shader.frag文件内容
 static const char* PIC_PREVIEW_FRAG_SHADER_2 =
@@ -37,7 +40,7 @@ protected:
 	GLuint vertShader;
 	GLuint fragShader;
 
-	PicPreviewTexture* picPreviewTexture;
+	GLuint texture;
 	GLint uniformSampler;
 	GLuint program;
 
@@ -49,7 +52,7 @@ protected:
 public:
 	PicPreviewRender();
 	virtual ~PicPreviewRender();
-	virtual bool init(int width, int height, PicPreviewTexture* picPreviewTexture);
+	virtual bool init(int width, int height, GLuint texture);
 	virtual void render();
 	virtual void dealloc();
 	void resetRenderSize(int left, int top, int width, int height);

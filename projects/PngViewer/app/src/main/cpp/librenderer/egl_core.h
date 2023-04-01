@@ -1,7 +1,9 @@
 #ifndef ANDROID_EGL_CORE_H_
 #define ANDROID_EGL_CORE_H_
 
-#include "./../libcommon/CommonTools.h"
+#include "logging.h"
+
+//#include "./../libcommon/CommonTools.h"
 #include <pthread.h>
 #include <android/native_window.h>
 #include <EGL/egl.h>
