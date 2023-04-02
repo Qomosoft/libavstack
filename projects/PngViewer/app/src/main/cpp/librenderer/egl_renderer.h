@@ -54,8 +54,6 @@ class EglRenderer {
 
   std::unique_ptr<QomoEgl> egl_;
   std::unique_ptr<Shader> shader_;
-  int attribute_vertex_index_;
-  int attribute_texcoord_index_;
   EGLSurface egl_surface_;
   GLuint texture_;
 

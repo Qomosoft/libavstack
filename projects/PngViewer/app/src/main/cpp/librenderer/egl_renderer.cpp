@@ -8,6 +8,9 @@ static const std::vector<uint8_t> kRed = {0xff, 0, 0, 0xff};
 static const std::vector<uint8_t> kGreen = {0, 0xff, 0, 0xff};
 static const std::vector<uint8_t> kBlue = {0, 0, 0xff, 0xff};
 
+static const GLuint kAttribIndexVertex = 0;
+static const GLuint kAttribIndexTexcoord = 1;
+
 static const char* kVertexShader =
     "attribute vec4 position;   \n"
     "attribute vec2 texcoord;   \n"
@@ -26,37 +29,27 @@ static const char* kFragmentShader =
     "}                                                      \n";
 
 EglRenderer::EglRenderer() :
-    egl_surface_(0), egl_(nullptr) {
-  LOGI("VideoDutePlayerController instance created");
-  shader_ = std::make_unique<Shader>(kVertexShader, kFragmentShader);
-  this->width_ = 720;
-  this->height_ = 720;
-  attribute_vertex_index_ = 0;
-  attribute_texcoord_index_ = 1;
-}
+    egl_surface_(nullptr),
+    egl_(nullptr),
+    shader_(nullptr) {}
 
-EglRenderer::~EglRenderer() {
-  LOGI("VideoDutePlayerController instance destroyed");
-}
+EglRenderer::~EglRenderer() {}
 
 bool EglRenderer::Start() {
-  LOGI("Creating VideoDutePlayerController thread");
+  LOGI("called");
   render_thread_ = std::make_unique<std::thread>(&EglRenderer::RenderLoop, this);
   return true;
 }
 
 void EglRenderer::Stop() {
-  LOGI("Stopping VideoDutePlayerController Render thread");
+  LOGI("called");
   /*send message to render thread to Stop rendering*/
   {
     std::unique_lock<std::mutex> lock(mutex_);
     msg_queue_.push(MSG_RENDER_LOOP_EXIT);
   }
   cv_.notify_all();
-
-  LOGI("we will join render thread Stop");
   render_thread_->join();
-  LOGI("VideoDutePlayerController Render thread stopped");
 }
 
 void EglRenderer::SetWindow(ANativeWindow *window) {
@@ -70,7 +63,7 @@ void EglRenderer::SetWindow(ANativeWindow *window) {
 }
 
 void EglRenderer::OnWindowSizeChanged(int width, int height) {
-  LOGI("VideoDutePlayerController::OnWindowSizeChanged width:%d; height:%d", width, height);
+  LOGI("width:%d; height:%d", width, height);
   {
     std::unique_lock<std::mutex> lock(mutex_);
     this->width_ = width;
@@ -82,14 +75,13 @@ void EglRenderer::OnWindowSizeChanged(int width, int height) {
 
 void EglRenderer::RenderLoop() {
   bool renderingEnabled = true;
-  LOGI("RenderLoop()");
+  LOGI("start");
   while (true) {
     std::unique_lock<std::mutex> lock(mutex_);
     /*process incoming messages*/
     if (!msg_queue_.empty()) {
       int msg = msg_queue_.front();
       msg_queue_.pop();
-      LOGI("looping msg: %d", msg);
       switch (msg) {
         case MSG_WINDOW_SET:
           Initialize();
@@ -111,29 +103,31 @@ void EglRenderer::RenderLoop() {
     cv_.wait(lock, [=] { return !renderingEnabled || !msg_queue_.empty(); });
     if (!renderingEnabled) break;
   }
-  LOGI("Render loop exits");
+  LOGI("stop");
 
   return;
 }
 
 bool EglRenderer::Initialize() {
+  LOGI("called");
   egl_ = std::make_unique<QomoEgl>();
   egl_->Initialize();
   egl_surface_ = egl_->CreateWindowSurface(window_);
   egl_->MakeCurrent(egl_surface_);
 
   texture_ = CreateTexture();
-  this->UpdateTexImage();
-  shader_->BindAttribLocation(attribute_texcoord_index_, "position");
-  shader_->BindAttribLocation(attribute_texcoord_index_, "texcoord");
+  UpdateTexImage();
+
+  shader_ = std::make_unique<Shader>(kVertexShader, kFragmentShader);
+  shader_->BindAttribLocation(kAttribIndexTexcoord, "position");
+  shader_->BindAttribLocation(kAttribIndexTexcoord, "texcoord");
   shader_->Use();
 
-  LOGI("Initializing context Success");
   return true;
 }
 
 void EglRenderer::Destroy() {
-  LOGI("dealloc renderer ...");
+  LOGI("called");
   if (texture_) {
     glDeleteTextures(1, &texture_);
   }
@@ -170,7 +164,7 @@ void EglRenderer::UpdateTexImage() {
 }
 
 void EglRenderer::DrawFrame() {
-  LOGI("frame_width=%d, frame_height=%d", width_, height_);
+  LOGI("called");
   glViewport(0, 0, width_, height_);
   glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -179,11 +173,11 @@ void EglRenderer::DrawFrame() {
 
   shader_->Use();
   static const GLfloat vertices[] = {-1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f };
-  glVertexAttribPointer(attribute_vertex_index_, 2, GL_FLOAT, 0, 0, vertices);
-  glEnableVertexAttribArray(attribute_vertex_index_);
+  glVertexAttribPointer(kAttribIndexVertex, 2, GL_FLOAT, 0, 0, vertices);
+  glEnableVertexAttribArray(kAttribIndexVertex);
   static const GLfloat tex_coords[] = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f };
-  glVertexAttribPointer(attribute_texcoord_index_, 2, GL_FLOAT, 0, 0, tex_coords);
-  glEnableVertexAttribArray(attribute_texcoord_index_);
+  glVertexAttribPointer(kAttribIndexTexcoord, 2, GL_FLOAT, 0, 0, tex_coords);
+  glEnableVertexAttribArray(kAttribIndexTexcoord);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
   if (egl_->SwapBuffers(egl_surface_) != 0) LOGE("SwapBuffers failed");
