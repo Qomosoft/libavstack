@@ -3,7 +3,7 @@ project(renderer)
 
 set(source_root ${PROJECT_SOURCE_DIR})
 set(source_files
-    ${source_root}/pic_preview_controller.cpp
+    ${source_root}/egl_renderer.cpp
     ${source_root}/logging.cpp
     ${source_root}/shader.cpp
     ${source_root}/qomo_egl.cpp)
