@@ -55,6 +55,7 @@ void PicPreviewController::resetSize(int width, int height) {
         this->screenWidth = width;
         this->screenHeight = height;
         renderer->resetRenderSize(0, 0, width, height);
+		msg_queue_.push(MSG_NONE);
     }
     cv_.notify_one();
 }
@@ -164,6 +165,7 @@ void PicPreviewController::updateTexImage() {
 }
 
 void PicPreviewController::drawFrame() {
+    LOGI("screenWidth=%d, screenHeight=%d", screenWidth, screenHeight);
     renderer->render();
 //	if (!eglCore->swapBuffers(previewSurface)) {
 //		LOGE("eglSwapBuffers() returned error %d", eglGetError());
