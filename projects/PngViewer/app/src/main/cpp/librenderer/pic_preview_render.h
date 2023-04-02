@@ -41,7 +41,6 @@ protected:
 	GLuint fragShader;
 
 	GLuint texture;
-	GLint uniformSampler;
 	GLuint program;
 
 	int useProgram();

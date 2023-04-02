@@ -7,7 +7,7 @@ static const std::vector<uint8_t> kGreen = {0, 0xff, 0, 0xff};
 static const std::vector<uint8_t> kBlue = {0, 0, 0xff, 0xff};
 
 PicPreviewController::PicPreviewController() :
-        previewSurface(0), eglCore(0), egl_(nullptr) {
+        previewSurface(0), egl_(nullptr) {
 	LOGI("VideoDutePlayerController instance created");
 	renderer = new PicPreviewRender();
 	this->screenWidth = 720;
@@ -83,9 +83,7 @@ void PicPreviewController::renderLoop() {
 			}
 		}
 
-//		if (eglCore) {
 		if (egl_) {
-//			eglCore->makeCurrent(previewSurface);
 			egl_->MakeCurrent(previewSurface);
 			this->drawFrame();
 		}
@@ -99,10 +97,6 @@ void PicPreviewController::renderLoop() {
 }
 
 bool PicPreviewController::initialize() {
-//	eglCore = new EGLCore();
-//	eglCore->init();
-//	previewSurface = eglCore->createWindowSurface(_window);
-//	eglCore->makeCurrent(previewSurface);
 	egl_ = std::make_unique<QomoEgl>();
 	egl_->Initialize();
 	previewSurface = egl_->CreateWindowSurface(_window);
@@ -127,11 +121,6 @@ void PicPreviewController::destroy() {
 		delete renderer;
 		renderer = NULL;
 	}
-//	if(eglCore){
-//		eglCore->releaseSurface(previewSurface);
-//		eglCore->release();
-//		eglCore = NULL;
-//	}
 	if (egl_) {
 		egl_->ReleaseSurface(previewSurface);
 		egl_->Release();
@@ -167,9 +156,6 @@ void PicPreviewController::updateTexImage() {
 void PicPreviewController::drawFrame() {
     LOGI("screenWidth=%d, screenHeight=%d", screenWidth, screenHeight);
     renderer->render();
-//	if (!eglCore->swapBuffers(previewSurface)) {
-//		LOGE("eglSwapBuffers() returned error %d", eglGetError());
-//	}
 	if (egl_->SwapBuffers(previewSurface) != 0) {
 		LOGE("eglSwapBuffers() returned error 0x%x", eglGetError());
 	}

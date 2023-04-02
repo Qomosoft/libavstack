@@ -2,7 +2,6 @@
 #define PIC_PREVIEW_CONTROLLER_H
 
 #include "pic_preview_render.h"
-#include "egl_core.h"
 #include "qomo_egl.h"
 
 #include <queue>
@@ -42,7 +41,6 @@ private:
 	// android window, supported by NDK r5 and newer
 	ANativeWindow* _window;
 
-	EGLCore* eglCore;
 	std::unique_ptr<QomoEgl> egl_;
 	EGLSurface previewSurface;
     GLint texture;
