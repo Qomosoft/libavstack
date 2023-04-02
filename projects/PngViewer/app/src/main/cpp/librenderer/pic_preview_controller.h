@@ -1,8 +1,8 @@
 #ifndef PIC_PREVIEW_CONTROLLER_H
 #define PIC_PREVIEW_CONTROLLER_H
 
-#include "pic_preview_render.h"
 #include "qomo_egl.h"
+#include "shader.h"
 
 #include <queue>
 #include <unistd.h>
@@ -25,8 +25,6 @@ public:
 	void setWindow(ANativeWindow* window);
 	void resetSize(int width, int height);
 private:
-	PicPreviewRender* renderer;
-
 	int screenWidth;
 	int screenHeight;
 	enum RenderThreadMessage {
@@ -42,8 +40,11 @@ private:
 	ANativeWindow* _window;
 
 	std::unique_ptr<QomoEgl> egl_;
+	std::unique_ptr<Shader> shader_;
+	int attribute_vertex_index_;
+	int attribute_texcoord_index_;
 	EGLSurface previewSurface;
-    GLint texture;
+    GLuint texture;
 
     GLuint createTexture();
 	bool checkGlError(const char *op);
@@ -56,6 +57,7 @@ private:
 	void updateTexImage();
 	void drawFrame();
 	void destroy();
+
 };
 
 #endif // PIC_PREVIEW_CONTROLLER_H

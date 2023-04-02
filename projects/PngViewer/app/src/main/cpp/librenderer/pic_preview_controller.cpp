@@ -1,17 +1,38 @@
 #define LOG_TAG "PicPreviewController"
 
 #include "pic_preview_controller.h"
+#include "shader.h"
+#include "logging.h"
 
 static const std::vector<uint8_t> kRed = {0xff, 0, 0, 0xff};
 static const std::vector<uint8_t> kGreen = {0, 0xff, 0, 0xff};
 static const std::vector<uint8_t> kBlue = {0, 0, 0xff, 0xff};
 
+static const char* kVertexShader =
+		"attribute vec4 position;   \n"
+		"attribute vec2 texcoord;   \n"
+		"varying vec2 v_texcoord;   \n"
+		"void main(void)            \n"
+		"{                          \n"
+		"   gl_Position = position; \n"
+		"   v_texcoord = texcoord;  \n"
+		"}                          \n";
+
+static const char* kFragmentShader =
+		"varying highp vec2 v_texcoord;                         \n"
+		"uniform sampler2D yuvTexSampler;                       \n"
+		"void main() {                                          \n"
+		"  gl_FragColor = texture2D(yuvTexSampler, v_texcoord); \n"
+		"}                                                      \n";
+
 PicPreviewController::PicPreviewController() :
         previewSurface(0), egl_(nullptr) {
 	LOGI("VideoDutePlayerController instance created");
-	renderer = new PicPreviewRender();
+	shader_ = std::make_unique<Shader>(kVertexShader, kFragmentShader);
 	this->screenWidth = 720;
 	this->screenHeight = 720;
+	attribute_vertex_index_ = 0;
+	attribute_texcoord_index_ = 1;
 }
 
 PicPreviewController::~PicPreviewController() {
@@ -54,7 +75,6 @@ void PicPreviewController::resetSize(int width, int height) {
         std::unique_lock<std::mutex> lock(mutex_);
         this->screenWidth = width;
         this->screenHeight = height;
-        renderer->resetRenderSize(0, 0, width, height);
 		msg_queue_.push(MSG_NONE);
     }
     cv_.notify_one();
@@ -85,7 +105,7 @@ void PicPreviewController::renderLoop() {
 
 		if (egl_) {
 			egl_->MakeCurrent(previewSurface);
-			this->drawFrame();
+			drawFrame();
 		}
 
 		cv_.wait(lock, [=] { return !renderingEnabled || !msg_queue_.empty(); });
@@ -104,22 +124,18 @@ bool PicPreviewController::initialize() {
 
     texture = createTexture();
 	this->updateTexImage();
+	shader_->BindAttribLocation(attribute_texcoord_index_, "position");
+	shader_->BindAttribLocation(attribute_texcoord_index_, "texcoord");
+	shader_->Use();
 
-	bool isRendererInitialized = renderer->init(screenWidth, screenHeight, texture);
-	if (!isRendererInitialized) {
-		LOGI("Renderer failed on initialized...");
-		return false;
-	}
 	LOGI("Initializing context Success");
 	return true;
 }
 
 void PicPreviewController::destroy() {
 	LOGI("dealloc renderer ...");
-	if (NULL != renderer) {
-		renderer->dealloc();
-		delete renderer;
-		renderer = NULL;
+	if (texture) {
+		glDeleteTextures(1, &texture);
 	}
 	if (egl_) {
 		egl_->ReleaseSurface(previewSurface);
@@ -154,15 +170,27 @@ void PicPreviewController::updateTexImage() {
 }
 
 void PicPreviewController::drawFrame() {
-    LOGI("screenWidth=%d, screenHeight=%d", screenWidth, screenHeight);
-    renderer->render();
-	if (egl_->SwapBuffers(previewSurface) != 0) {
-		LOGE("eglSwapBuffers() returned error 0x%x", eglGetError());
-	}
+	LOGI("frame_width=%d, frame_height=%d", screenWidth, screenHeight);
+	glViewport(0, 0, screenWidth, screenHeight);
+	glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	shader_->Use();
+	static const GLfloat vertices[] = {-1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f };
+	glVertexAttribPointer(attribute_vertex_index_, 2, GL_FLOAT, 0, 0, vertices);
+	glEnableVertexAttribArray(attribute_vertex_index_);
+	static const GLfloat tex_coords[] = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f };
+	glVertexAttribPointer(attribute_texcoord_index_, 2, GL_FLOAT, 0, 0, tex_coords);
+	glEnableVertexAttribArray(attribute_texcoord_index_);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	if (egl_->SwapBuffers(previewSurface) != 0) LOGE("SwapBuffers failed");
 }
 
 GLuint PicPreviewController::createTexture() {
-    GLuint texture;
+	GLuint texture;
     glGenTextures(1, &texture);
     if (checkGlError("createTexture")) LOGE("createTexture failed");
 

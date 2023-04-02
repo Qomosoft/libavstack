@@ -1,10 +1,11 @@
+#define LOG_TAG "PngViewer"
 #include "pic_preview_controller.h"
+#include "logging.h"
 
 #include <jni.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
-#define LOG_TAG "PngViewer"
 
 static ANativeWindow *window = nullptr;
 static PicPreviewController *controller = nullptr;
