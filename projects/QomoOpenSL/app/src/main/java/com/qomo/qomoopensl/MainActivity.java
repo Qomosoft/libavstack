@@ -2,16 +2,21 @@ package com.qomo.qomoopensl;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.qomo.qomoopensl.databinding.ActivityMainBinding;
+import com.qomo.qomoopensl.utils.AssetUtils;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
-
-    // Used to load the 'qomoopensl' library on application startup.
-    static {
-        System.loadLibrary("qomoopensl");
-    }
+    private static final String TAG = "MainActivity";
+    private static final String pcmFileName = "out.pcm";
+    private String pcmFilePath;
+    private final QomoOpenSl qomoOpenSl = new QomoOpenSl();
 
     private ActivityMainBinding binding;
 
@@ -21,15 +26,36 @@ public class MainActivity extends AppCompatActivity {
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        preparePcmData();
+        initView();
 
-        // Example of a call to a native method
-        TextView tv = binding.sampleText;
-        tv.setText(stringFromJNI());
+        if (qomoOpenSl.init(pcmFilePath, 48000, 2, 2) != 0) {
+            showToast("init failed");
+        }
     }
 
-    /**
-     * A native method that is implemented by the 'qomoopensl' native library,
-     * which is packaged with this application.
-     */
-    public native String stringFromJNI();
+    private void initView() {
+        binding.btnStart.setOnClickListener(view -> qomoOpenSl.start());
+        binding.btnStop.setOnClickListener(view -> qomoOpenSl.stop());
+    }
+
+    private void preparePcmData() {
+        pcmFilePath = getExternalFilesDir(null) + File.separator + pcmFileName;
+        AssetUtils.copyAsset(getAssets(), pcmFileName, pcmFilePath);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        qomoOpenSl.release();
+    }
+
+    protected void showToast(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
+    static {
+        System.loadLibrary("qomoopensles");
+    }
+
 }
