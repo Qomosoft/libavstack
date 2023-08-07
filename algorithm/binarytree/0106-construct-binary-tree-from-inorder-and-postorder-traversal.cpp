@@ -77,3 +77,35 @@ public:
         return root;
     }
 };
+
+class SolutionI {
+public:
+    TreeNode* buildTree(vector<int>& inorder, vector<int>& postorder) {
+        if (inorder.empty() || postorder.empty()) return nullptr;
+        return dfs(inorder, 0, inorder.size(), postorder, 0, postorder.size());
+    }
+
+    TreeNode* dfs(vector<int>& inorder, int inorder_begin, int inorder_end, vector<int>& postorder, int postorder_begin, int postorder_end) {
+        if (postorder_begin == postorder_end) return nullptr;
+
+        int root_value = postorder[postorder_end - 1];
+        auto* root = new TreeNode(root_value);
+        if (postorder_end - postorder_begin == 1) return root;
+
+        int root_index;
+        for (root_index = 0; root_index < inorder_end; ++root_index) {
+            if (inorder[root_index] == root_value) break;
+        }
+
+        int left_inorder_begin = inorder_begin, left_inorder_end = root_index;
+        int right_inorder_begin = root_index + 1, right_inorder_end = inorder_end;
+
+        int left_postorder_begin = postorder_begin, left_postorder_end = postorder_begin + (root_index - inorder_begin);
+        int right_postorder_begin = postorder_begin + (root_index - inorder_begin), right_postorder_end = postorder_end - 1;
+
+        root->left = dfs(inorder, left_inorder_begin, left_inorder_end, postorder, left_postorder_begin, left_postorder_end);
+        root->right = dfs(inorder, right_inorder_begin, right_inorder_end, postorder, right_postorder_begin, right_postorder_end);
+
+        return root;
+    }
+};
