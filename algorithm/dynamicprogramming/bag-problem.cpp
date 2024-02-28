@@ -34,7 +34,7 @@ using namespace std;
 
 class Solution {
 public:
-    int packProblem(int bagweight, const vector<int>& weight, const vector<int>& value) {
+    int bagProblem(int bagweight, const vector<int>& weight, const vector<int>& value) {
         vector<vector<int>> dp(weight.size(), vector<int>(bagweight + 1, 0));
         for (int j = weight[0]; j <= bagweight; j++)
         {
