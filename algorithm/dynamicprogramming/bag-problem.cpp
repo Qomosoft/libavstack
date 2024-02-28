@@ -29,35 +29,50 @@
 // 研究材料占用空间和价值都小于等于 1000
 // https://kamacoder.com/problempage.php?pid=1046
 
+#include <iostream>
 #include <vector>
+#include <algorithm>
 using namespace std;
 
 class Solution {
 public:
     int bagProblem(int bagweight, const vector<int>& weight, const vector<int>& value) {
         vector<vector<int>> dp(weight.size(), vector<int>(bagweight + 1, 0));
-        for (int j = weight[0]; j <= bagweight; j++)
-        {
+        for (int j = weight[0]; j <= bagweight; j++) {
             dp[0][j] = value[0];
         }
 
-        for (int i = 1; i < weight.size(); i++)
-        { // 遍历物品
-            for (int j = 0; j <= bagweight; j++)
-            { // 遍历背包容量
-                if (j < weight[i])
-                    dp[i][j] = dp[i - 1][j];
-                else
-                    dp[i][j] = max(dp[i - 1][j], dp[i - 1][j - weight[i]] + value[i]);
+        for (int i = 1; i < weight.size(); i++) { // 遍历物品
+            for (int j = 0; j <= bagweight; j++) { // 遍历背包容量
+                if (j < weight[i]) dp[i][j] = dp[i - 1][j];
+                else dp[i][j] = max(dp[i - 1][j], dp[i - 1][j - weight[i]] + value[i]);
             }
         }
 
         return dp[weight.size() - 1][bagweight];
     }
+
+    int bagProblemI(int bagweight, const vector<int>& weight, const vector<int>& value) {
+        vector<int> dp(bagweight + 1, 0);
+        dp[0] = 0;
+        for (int i = 0; i < weight.size(); i++) {
+            for (int j = bagweight; j >= weight[i]; j--) {
+                dp[j] = max(dp[j], dp[j - weight[i]] + value[i]);
+            }
+        }
+
+        return dp[bagweight];
+    }
 };
 
 int main(int argc, char const *argv[])
 {
-    /* code */
+    int bagweight = 4;
+    vector<int> weight = {1, 3, 4};
+    vector<int> value = {15, 20, 30};
+
+    Solution solution;
+    cout << solution.bagProblem(bagweight, weight, value) << endl;
+    cout << solution.bagProblemI(bagweight, weight, value) << endl;
     return 0;
 }
