@@ -52,7 +52,7 @@ public:
         return dp[weight.size() - 1][bagweight];
     }
 
-    int bagProblemI(int bagweight, const vector<int>& weight, const vector<int>& value) {
+    int knapsackProblemI(int bagweight, const vector<int>& weight, const vector<int>& value) {
         vector<int> dp(bagweight + 1, 0);
         dp[0] = 0;
         for (int i = 0; i < weight.size(); i++) {
@@ -73,6 +73,6 @@ int main(int argc, char const *argv[])
 
     Solution solution;
     cout << solution.knapsackProblem(bagweight, weight, value) << endl;
-    cout << solution.bagProblemI(bagweight, weight, value) << endl;
+    cout << solution.knapsackProblemI(bagweight, weight, value) << endl;
     return 0;
 }
