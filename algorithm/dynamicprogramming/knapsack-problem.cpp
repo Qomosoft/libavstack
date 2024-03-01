@@ -36,7 +36,7 @@ using namespace std;
 
 class Solution {
 public:
-    int bagProblem(int bagweight, const vector<int>& weight, const vector<int>& value) {
+    int knapsackProblem(int bagweight, const vector<int>& weight, const vector<int>& value) {
         vector<vector<int>> dp(weight.size(), vector<int>(bagweight + 1, 0));
         for (int j = weight[0]; j <= bagweight; j++) {
             dp[0][j] = value[0];
@@ -72,7 +72,7 @@ int main(int argc, char const *argv[])
     vector<int> value = {15, 20, 30};
 
     Solution solution;
-    cout << solution.bagProblem(bagweight, weight, value) << endl;
+    cout << solution.knapsackProblem(bagweight, weight, value) << endl;
     cout << solution.bagProblemI(bagweight, weight, value) << endl;
     return 0;
 }
