@@ -36,7 +36,7 @@ using namespace std;
 
 class Solution {
 public:
-    int multiObjKnapsackProblemI(int bagweight, const vector<int>& weight, const vector<int>& value) {
+    int multiObjKnapsackProblem(int bagweight, const vector<int>& weight, const vector<int>& value) {
         vector<int> dp(bagweight + 1, 0);
         dp[0] = 0;
         for (int i = 0; i < weight.size(); i++) {
@@ -56,6 +56,6 @@ int main(int argc, char const *argv[])
     vector<int> value = {15, 20, 30};
 
     Solution solution;
-    cout << solution.multiObjKnapsackProblemI(bagweight, weight, value) << endl;
+    cout << solution.multiObjKnapsackProblem(bagweight, weight, value) << endl;
     return 0;
 }
