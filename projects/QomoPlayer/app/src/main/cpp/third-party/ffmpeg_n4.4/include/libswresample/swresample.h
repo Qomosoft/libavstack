@@ -207,7 +207,7 @@ const AVClass *swr_get_class(void);
 struct SwrContext *swr_alloc(void);
 
 /**
- * Initialize context after user parameters have been set.
+ * Init context after user parameters have been set.
  * @note The context must be configured using the AVOption API.
  *
  * @see av_opt_set_int()

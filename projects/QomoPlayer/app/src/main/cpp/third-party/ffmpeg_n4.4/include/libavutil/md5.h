@@ -51,7 +51,7 @@ struct AVMD5;
 struct AVMD5 *av_md5_alloc(void);
 
 /**
- * Initialize MD5 hashing.
+ * Init MD5 hashing.
  *
  * @param ctx pointer to the function context (of size av_md5_size)
  */

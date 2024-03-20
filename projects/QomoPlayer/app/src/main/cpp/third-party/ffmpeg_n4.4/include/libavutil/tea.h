@@ -43,7 +43,7 @@ struct AVTEA;
 struct AVTEA *av_tea_alloc(void);
 
 /**
- * Initialize an AVTEA context.
+ * Init an AVTEA context.
  *
  * @param ctx an AVTEA context
  * @param key a key of 16 bytes used for encryption/decryption

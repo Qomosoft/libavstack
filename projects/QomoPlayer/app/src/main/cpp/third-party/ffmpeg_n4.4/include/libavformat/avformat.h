@@ -592,7 +592,7 @@ typedef struct AVOutputFormat {
     int (*get_device_list)(struct AVFormatContext *s, struct AVDeviceInfoList *device_list);
 #if LIBAVFORMAT_VERSION_MAJOR < 59
     /**
-     * Initialize device capabilities submodule.
+     * Init device capabilities submodule.
      * @see avdevice_capabilities_create() for more details.
      */
     int (*create_device_capabilities)(struct AVFormatContext *s, struct AVDeviceCapabilitiesQuery *caps);
@@ -604,7 +604,7 @@ typedef struct AVOutputFormat {
 #endif
     enum AVCodecID data_codec; /**< default data codec */
     /**
-     * Initialize format. May allocate data here, and set any AVFormatContext or
+     * Init format. May allocate data here, and set any AVFormatContext or
      * AVStream parameters that need to be set before packets are sent.
      * This method must not write output.
      *
@@ -773,7 +773,7 @@ typedef struct AVInputFormat {
 
 #if LIBAVFORMAT_VERSION_MAJOR < 59
     /**
-     * Initialize device capabilities submodule.
+     * Init device capabilities submodule.
      * @see avdevice_capabilities_create() for more details.
      */
     int (*create_device_capabilities)(struct AVFormatContext *s, struct AVDeviceCapabilitiesQuery *caps);
@@ -1944,7 +1944,7 @@ const char *avformat_license(void);
 
 #if FF_API_NEXT
 /**
- * Initialize libavformat and register all the muxers, demuxers and
+ * Init libavformat and register all the muxers, demuxers and
  * protocols. If you do not call this function, then you can select
  * exactly which formats you want to support.
  *

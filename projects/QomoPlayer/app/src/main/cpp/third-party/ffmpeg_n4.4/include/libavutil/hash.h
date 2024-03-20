@@ -70,7 +70,7 @@
  * if (ret < 0)
  *     return ret;
  *
- * // Initialize the hash context
+ * // Init the hash context
  * av_hash_init(ctx);
  *
  * // Update the hash context with data
@@ -169,7 +169,7 @@ const char *av_hash_get_name(const struct AVHashContext *ctx);
 int av_hash_get_size(const struct AVHashContext *ctx);
 
 /**
- * Initialize or reset a hash context.
+ * Init or reset a hash context.
  *
  * @param[in,out] ctx Hash context
  */

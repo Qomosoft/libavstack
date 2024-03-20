@@ -35,14 +35,14 @@ typedef struct AVFifoBuffer {
 } AVFifoBuffer;
 
 /**
- * Initialize an AVFifoBuffer.
+ * Init an AVFifoBuffer.
  * @param size of FIFO
  * @return AVFifoBuffer or NULL in case of memory allocation failure
  */
 AVFifoBuffer *av_fifo_alloc(unsigned int size);
 
 /**
- * Initialize an AVFifoBuffer.
+ * Init an AVFifoBuffer.
  * @param nmemb number of elements
  * @param size  size of the single element
  * @return AVFifoBuffer or NULL in case of memory allocation failure

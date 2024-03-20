@@ -43,7 +43,7 @@ struct AVCAST5;
   */
 struct AVCAST5 *av_cast5_alloc(void);
 /**
-  * Initialize an AVCAST5 context.
+  * Init an AVCAST5 context.
   *
   * @param ctx an AVCAST5 context
   * @param key a key of 5,6,...16 bytes used for encryption/decryption

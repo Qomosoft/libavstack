@@ -59,7 +59,7 @@ struct AVSHA;
 struct AVSHA *av_sha_alloc(void);
 
 /**
- * Initialize SHA-1 or SHA-2 hashing.
+ * Init SHA-1 or SHA-2 hashing.
  *
  * @param context pointer to the function context (of size av_sha_size)
  * @param bits    number of bits in digest (SHA-1 - 160 bits, SHA-2 224 or 256 bits)

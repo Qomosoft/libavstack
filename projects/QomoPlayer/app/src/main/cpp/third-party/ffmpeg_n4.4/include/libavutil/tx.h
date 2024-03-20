@@ -111,7 +111,7 @@ enum AVTXFlags {
 };
 
 /**
- * Initialize a transform context with the given configuration
+ * Init a transform context with the given configuration
  * (i)MDCTs with an odd length are currently not supported.
  *
  * @param ctx the context to allocate, will be NULL on error

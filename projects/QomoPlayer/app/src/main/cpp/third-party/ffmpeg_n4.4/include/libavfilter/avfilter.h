@@ -719,7 +719,7 @@ int avfilter_process_command(AVFilterContext *filter, const char *cmd, const cha
 const AVFilter *av_filter_iterate(void **opaque);
 
 #if FF_API_NEXT
-/** Initialize the filter system. Register all builtin filters. */
+/** Init the filter system. Register all builtin filters. */
 attribute_deprecated
 void avfilter_register_all(void);
 
@@ -756,7 +756,7 @@ const AVFilter *avfilter_get_by_name(const char *name);
 
 
 /**
- * Initialize a filter with the supplied parameters.
+ * Init a filter with the supplied parameters.
  *
  * @param ctx  uninitialized filter context to initialize
  * @param args Options to initialize the filter with. This must be a
@@ -768,7 +768,7 @@ const AVFilter *avfilter_get_by_name(const char *name);
 int avfilter_init_str(AVFilterContext *ctx, const char *args);
 
 /**
- * Initialize a filter with the supplied dictionary of options.
+ * Init a filter with the supplied dictionary of options.
  *
  * @param ctx     uninitialized filter context to initialize
  * @param options An AVDictionary filled with options for this filter. On

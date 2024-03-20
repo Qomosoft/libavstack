@@ -42,7 +42,7 @@ struct AVAES;
 struct AVAES *av_aes_alloc(void);
 
 /**
- * Initialize an AVAES context.
+ * Init an AVAES context.
  * @param key_bits 128, 192 or 256
  * @param decrypt 0 for encryption, 1 for decryption
  */

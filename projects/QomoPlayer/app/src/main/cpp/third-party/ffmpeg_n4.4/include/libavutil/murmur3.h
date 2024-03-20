@@ -69,7 +69,7 @@
 struct AVMurMur3 *av_murmur3_alloc(void);
 
 /**
- * Initialize or reinitialize an AVMurMur3 hash context with a seed.
+ * Init or reinitialize an AVMurMur3 hash context with a seed.
  *
  * @param[out] c    Hash context
  * @param[in]  seed Random seed
@@ -81,7 +81,7 @@ struct AVMurMur3 *av_murmur3_alloc(void);
 void av_murmur3_init_seeded(struct AVMurMur3 *c, uint64_t seed);
 
 /**
- * Initialize or reinitialize an AVMurMur3 hash context.
+ * Init or reinitialize an AVMurMur3 hash context.
  *
  * Equivalent to av_murmur3_init_seeded() with a built-in seed.
  *

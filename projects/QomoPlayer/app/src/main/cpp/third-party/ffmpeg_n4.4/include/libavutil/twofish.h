@@ -44,7 +44,7 @@ struct AVTWOFISH;
 struct AVTWOFISH *av_twofish_alloc(void);
 
 /**
-  * Initialize an AVTWOFISH context.
+  * Init an AVTWOFISH context.
   *
   * @param ctx an AVTWOFISH context
   * @param key a key of size ranging from 1 to 32 bytes used for encryption/decryption

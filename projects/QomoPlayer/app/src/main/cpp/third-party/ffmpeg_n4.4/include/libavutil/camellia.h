@@ -44,7 +44,7 @@ struct AVCAMELLIA;
 struct AVCAMELLIA *av_camellia_alloc(void);
 
 /**
-  * Initialize an AVCAMELLIA context.
+  * Init an AVCAMELLIA context.
   *
   * @param ctx an AVCAMELLIA context
   * @param key a key of 16, 24, 32 bytes used for encryption/decryption

@@ -43,7 +43,7 @@ typedef struct AVBlowfish {
 AVBlowfish *av_blowfish_alloc(void);
 
 /**
- * Initialize an AVBlowfish context.
+ * Init an AVBlowfish context.
  *
  * @param ctx an AVBlowfish context
  * @param key a key

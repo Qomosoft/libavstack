@@ -471,7 +471,7 @@ void av_packet_free(AVPacket **pkt);
 
 #if FF_API_INIT_PACKET
 /**
- * Initialize optional fields of a packet with default values.
+ * Init optional fields of a packet with default values.
  *
  * Note, this does not touch the data and size members, which have to be
  * initialized separately.
@@ -515,7 +515,7 @@ void av_shrink_packet(AVPacket *pkt, int size);
 int av_grow_packet(AVPacket *pkt, int grow_by);
 
 /**
- * Initialize a reference-counted packet from av_malloc()ed data.
+ * Init a reference-counted packet from av_malloc()ed data.
  *
  * @param pkt packet to be initialized. This function will set the data, size,
  *        and buf fields, all others are left untouched.

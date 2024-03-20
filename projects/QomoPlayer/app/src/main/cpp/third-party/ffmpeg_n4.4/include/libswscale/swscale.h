@@ -148,7 +148,7 @@ int sws_isSupportedEndiannessConversion(enum AVPixelFormat pix_fmt);
 struct SwsContext *sws_alloc_context(void);
 
 /**
- * Initialize the swscaler context sws_context.
+ * Init the swscaler context sws_context.
  *
  * @return zero or positive value on success, a negative value on
  * error

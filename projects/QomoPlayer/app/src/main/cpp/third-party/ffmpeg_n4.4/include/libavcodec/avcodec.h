@@ -2559,7 +2559,7 @@ typedef struct AVHWAccel {
     void (*decode_mb)(struct MpegEncContext *s);
 
     /**
-     * Initialize the hwaccel private data.
+     * Init the hwaccel private data.
      *
      * This will be called from ff_get_format(), after hwaccel and
      * hwaccel_context are set and the hwaccel private data in AVCodecInternal
@@ -2568,7 +2568,7 @@ typedef struct AVHWAccel {
     int (*init)(AVCodecContext *avctx);
 
     /**
-     * Uninitialize the hwaccel private data.
+     * Finalize the hwaccel private data.
      *
      * This will be called from get_format() or avcodec_close(), after hwaccel
      * and hwaccel_context are already uninitialized.
@@ -2865,7 +2865,7 @@ int avcodec_parameters_to_context(AVCodecContext *codec,
                                   const AVCodecParameters *par);
 
 /**
- * Initialize the AVCodecContext to use the given AVCodec. Prior to using this
+ * Init the AVCodecContext to use the given AVCodec. Prior to using this
  * function the context has to be allocated with avcodec_alloc_context3().
  *
  * The functions avcodec_find_decoder_by_name(), avcodec_find_encoder_by_name(),

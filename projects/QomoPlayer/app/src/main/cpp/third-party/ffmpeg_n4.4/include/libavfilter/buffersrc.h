@@ -123,7 +123,7 @@ typedef struct AVBufferSrcParameters {
 AVBufferSrcParameters *av_buffersrc_parameters_alloc(void);
 
 /**
- * Initialize the buffersrc or abuffersrc filter with the provided parameters.
+ * Init the buffersrc or abuffersrc filter with the provided parameters.
  * This function may be called multiple times, the later calls override the
  * previous ones. Some of the parameters may also be set through AVOptions, then
  * whatever method is used last takes precedence.

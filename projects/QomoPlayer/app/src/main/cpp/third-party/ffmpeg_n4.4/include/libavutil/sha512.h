@@ -61,7 +61,7 @@ struct AVSHA512;
 struct AVSHA512 *av_sha512_alloc(void);
 
 /**
- * Initialize SHA-2 512 hashing.
+ * Init SHA-2 512 hashing.
  *
  * @param context pointer to the function context (of size av_sha512_size)
  * @param bits    number of bits in digest (224, 256, 384 or 512 bits)

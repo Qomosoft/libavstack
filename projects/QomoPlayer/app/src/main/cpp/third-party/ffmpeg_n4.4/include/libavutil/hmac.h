@@ -54,7 +54,7 @@ AVHMAC *av_hmac_alloc(enum AVHMACType type);
 void av_hmac_free(AVHMAC *ctx);
 
 /**
- * Initialize an AVHMAC context with an authentication key.
+ * Init an AVHMAC context with an authentication key.
  * @param ctx    The HMAC context
  * @param key    The authentication key
  * @param keylen The length of the key, in bytes

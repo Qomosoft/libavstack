@@ -15,4 +15,11 @@ void trace(int prio, const char *tag, const char *file, const int line, const ch
 void ff_log_callback(void *avcl, int level, const char *fmt, va_list vl);
 
 #define LOGI(...) trace(ANDROID_LOG_INFO, LOG_TAG, __FILE__, __LINE__, __FUNCTION__, "info", ##__VA_ARGS__)
+#define LOGW(...) trace(ANDROID_LOG_WARN, LOG_TAG, __FILE__, __LINE__, __FUNCTION__, "warn", ##__VA_ARGS__)
 #define LOGE(...) trace(ANDROID_LOG_ERROR, LOG_TAG, __FILE__, __LINE__, __FUNCTION__, "error", ##__VA_ARGS__)
+
+#define CHECK(state, msg) \
+  if (state) {            \
+    LOGE("%s", msg);      \
+    return;               \
+  }

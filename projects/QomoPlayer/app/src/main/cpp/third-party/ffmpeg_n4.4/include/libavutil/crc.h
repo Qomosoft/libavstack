@@ -59,7 +59,7 @@ typedef enum {
 }AVCRCId;
 
 /**
- * Initialize a CRC table.
+ * Init a CRC table.
  * @param ctx must be an array of size sizeof(AVCRC)*257 or sizeof(AVCRC)*1024
  * @param le If 1, the lowest bit represents the coefficient for the highest
  *           exponent of the corresponding polynomial (both for poly and
