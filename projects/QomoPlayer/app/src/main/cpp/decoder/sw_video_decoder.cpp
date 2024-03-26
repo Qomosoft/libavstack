@@ -57,6 +57,11 @@ int SWVideoDecoder::Init(const std::string &uri) {
   }
   av_dump_format(fmt_ctx_, 0, uri.c_str(), 0);
 
+  packet_ = av_packet_alloc();
+  if (!packet_) {
+    LOGE("alloc packet failed\n");
+  }
+
   return 0;
 }
 
@@ -68,18 +73,31 @@ int SWVideoDecoder::Finalize() {
   return 0;
 }
 
-int SWVideoDecoder::DecodeFrames(float duration, std::list<MediaFramePtr> frames) {
-  return 0;
-}
+int SWVideoDecoder::DecodeFrames(float duration, std::list<AVFrame *> *frames) {
+  int ret;
+  float decoded_duration = 0.0f;
+  AVCodecContext *dec = nullptr;
+  AVFrame *frame = av_frame_alloc();
+  while (decoded_duration <= duration && av_read_frame(fmt_ctx_, packet_) >= 0) {
+    if (packet_->stream_index == audio_stream_index_) {
+      dec = video_dec_ctx_;
+    } else if (packet_->stream_index == video_stream_index_) {
+      dec = audio_dec_ctx_;
+    }
 
-int SWVideoDecoder::DecodeAudioFrames(AVPacket pkt,
-                                      std::list<MediaFramePtr> out,
-                                      float *decoded_duration,
-                                      float min_duration) {
-  return 0;
-}
+    ret = avcodec_receive_frame(dec, frame);
+    if (ret != 0) {
+      LOGE("Decode failed, return %d\n", ret);
+      break;
+    }
 
-int SWVideoDecoder::DecodeVideoFrame(AVPacket pkt, std::list<MediaFramePtr> out) {
+    if (packet_->stream_index == audio_stream_index_) {
+      decoded_duration += frame->pkt_duration;
+    }
+
+    frames->emplace_back(frame);
+    av_packet_unref(packet_);
+  }
   return 0;
 }
 

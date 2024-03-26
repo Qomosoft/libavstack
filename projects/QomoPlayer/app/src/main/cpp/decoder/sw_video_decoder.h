@@ -13,7 +13,6 @@ extern "C" {
 }
 
 #include "video_decoder.h"
-#include "media_frame.h"
 
 #include <list>
 
@@ -25,17 +24,16 @@ class SWVideoDecoder : public VideoDecoder {
   ~SWVideoDecoder();
   int Init(const std::string &uri) override;
   int Finalize() override;
-  int DecodeFrames(float duration, std::list<MediaFramePtr> frames) override;
+  int DecodeFrames(float duration, std::list<AVFrame *> *frames) override;
 
  private:
-  int DecodeAudioFrames(AVPacket pkt, std::list<MediaFramePtr> out, float *decoded_duration, float min_duration);
-  int DecodeVideoFrame(AVPacket pkt, std::list<MediaFramePtr> out);
   int OpenCodecContext(int *stream_idx, AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, AVMediaType type);
 
  private:
   AVFormatContext *fmt_ctx_;
   AVCodecContext  *audio_dec_ctx_;
   AVCodecContext  *video_dec_ctx_;
+  AVPacket *packet_;
   int video_stream_index_;
   int audio_stream_index_;
 };
