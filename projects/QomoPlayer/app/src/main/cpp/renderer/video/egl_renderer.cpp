@@ -67,7 +67,7 @@ int EglRenderer::Start() {
 int EglRenderer::Stop() {
   LOGI("Stop");
   {
-    std::unique_lock<std::mutex> lock;
+    std::unique_lock<std::mutex> lock(queue_mutex_);
     render_stop_ = true;
   }
 
@@ -126,7 +126,7 @@ void EglRenderer::DrawRgb(const std::vector<uint8_t> &rgb, int frame_width, int 
 template<typename F, typename... Args>
 void EglRenderer::PostOnRenderThread(F &&f, Args &&... args) {
   {
-    std::unique_lock<std::mutex> lock;
+    std::unique_lock<std::mutex> lock(queue_mutex_);
     if (render_stop_) {
       LOGE("enqueue task to stopped render thread");
       return;

@@ -24,6 +24,8 @@ set(VIDEO_DECODER_SOURCE_FILES
 
 ## Renderer
 set(RENDERER_SOURCE_FILES
+        renderer/audio/audio_renderer.cpp
+        renderer/video/video_renderer.cpp
         renderer/video/egl_renderer.cpp
         renderer/video/qomo_egl.cpp
         renderer/video/shader.cpp
@@ -36,10 +38,11 @@ include_directories(utils
         media
         synchronizer
         decoder
+        renderer
         )
 
 add_definitions("-D__STDC_CONSTANT_MACROS")
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-Bsymbolic")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-Bsymbolic")
 
 add_library(${CMAKE_PROJECT_NAME} SHARED
         ${MEDIA_PLAYER_SOURCE_FILES}

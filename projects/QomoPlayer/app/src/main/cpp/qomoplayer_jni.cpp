@@ -21,10 +21,10 @@ extern "C" {
 
 JNIEXPORT jlong JNICALL
 Java_com_qomo_qomoplayer_media_QomoPlayer_native_1init(JNIEnv *env, jclass clazz, jint decoder_type) {
-    //TODO: create native player engine
-    MediaPlayer *engine = new MediaPlayer();
+  //TODO: create native player engine
+  MediaPlayer *engine = new MediaPlayer();
   engine->Init(decoder_type);
-    return reinterpret_cast<jlong>(engine);
+  return reinterpret_cast<jlong>(engine);
 }
 JNIEXPORT void JNICALL
 Java_com_qomo_qomoplayer_media_QomoPlayer_native_1setup(JNIEnv *env, jobject thiz) {

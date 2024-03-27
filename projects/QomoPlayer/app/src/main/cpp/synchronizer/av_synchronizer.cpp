@@ -2,12 +2,19 @@
 // Created by Robin on 2024/3/20.
 //
 
+#define LOG_TAG "AVSynchronizer"
+
 #include "av_synchronizer.h"
 #include "sw_video_decoder.h"
 #include "logging.h"
 
 static const int kHWDecoder = 0;
 static const int kSWDecoder = 1;
+
+static const float kMinBufferedDuration = 0.5f; // seconds
+static const float kMaxBufferedDuration = 0.8f; // seconds
+static const float kSyncMaxTimeDiff = 0.05f; // seconds
+static const float kDefaultAudioBufferDuration = 0.03f; // seconds
 
 AVSynchronizer::AVSynchronizer() : decoder_thread_(nullptr),
                                    is_on_decoding_(false),
@@ -32,6 +39,9 @@ bool AVSynchronizer::Init(const std::string &url, int decode_type) {
     return false;
   }
 
+  audio_frame_buffer_ = std::make_shared<std::queue<AVFrame *>>();
+  video_frame_buffer_ = std::make_shared<std::queue<AVFrame *>>();
+
   decoder_->Init(url);
 
   return true;
@@ -47,7 +57,8 @@ void AVSynchronizer::Finalize() {
 }
 
 void AVSynchronizer::Start() {
-  if (!decoder_thread_) {
+  LOGI("enter");
+  if (decoder_thread_) {
     LOGW("already started!\n");
     return;
   }
@@ -57,37 +68,110 @@ void AVSynchronizer::Start() {
 }
 
 void AVSynchronizer::Stop() {
+  LOGI("enter");
   Finalize();
 }
 
-void AVSynchronizer::DecodeFrames() {
-  int ret = 0;
+int AVSynchronizer::DecodeFrames() {
+  LOGI("enter");
   float duration = 0.1f;
+  int ret;
   while (buffered_duration_ < max_buffered_duration_) {
     std::list<AVFrame *> frames;
     ret = decoder_->DecodeFrames(duration, &frames);
     if (ret != 0) {
-      LOGE("DecodeFrames failed, return %d\n", ret);
+      LOGE("DecodeFrames failed %s\n", av_err2str(ret));
       break;
     }
 
     for (auto frame : frames) {
       if (frame->pict_type == AV_PICTURE_TYPE_NONE) {
-        buffered_duration_ += frame->pkt_duration;
-        audio_frame_buffer_.emplace(frame);
+        buffered_duration_ += frame->pkt_duration / 1000000.0f;
+        audio_frame_buffer_->emplace(frame);
       } else {
-        video_frame_buffer_.emplace(frame);
+        video_frame_buffer_->emplace(frame);
       }
     }
   }
+
+  return ret;
 }
 
 void AVSynchronizer::DecoderLoop() {
   while (is_on_decoding_) {
-    std::unique_lock<std::mutex> lock;
-    cv_.wait(lock, [this] { return buffered_duration_ < max_buffered_duration_ || !is_on_decoding_; });
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return (buffered_duration_ < max_buffered_duration_ && !is_eof_) || !is_on_decoding_; });
     if (!is_on_decoding_) break;
 
-    DecodeFrames();
+    int ret = DecodeFrames();
+    if (ret == AVERROR_EOF) is_eof_ = true;
   }
+}
+
+int AVSynchronizer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  if (is_eof_) return AVERROR_EOF;
+
+  std::shared_ptr<std::queue<AVFrame *>> buffer_queue;
+
+  if (type == AVMEDIA_TYPE_AUDIO) {
+    buffer_queue = audio_frame_buffer_;
+  } else if (type == AVMEDIA_TYPE_VIDEO) {
+    buffer_queue = video_frame_buffer_;
+  }
+
+  if (buffer_queue->empty()) {
+    LOGW("buffered %s buffered_frame not available\n", av_get_media_type_string(type));
+    return -1;
+  }
+
+  AVFrame *buffered_frame = nullptr;
+  if (type == AVMEDIA_TYPE_AUDIO) {
+    buffered_frame = buffer_queue->front();
+    buffer_queue->pop();
+    current_playback_position_ = buffered_frame->pkt_pos;
+    current_audio_frame_duration_ = buffered_frame->pkt_duration;
+    buffered_duration_ -= buffered_frame->pkt_duration / 1000000.0f;
+  } else if (type == AVMEDIA_TYPE_VIDEO) {
+    while (true) {
+      buffered_frame = buffer_queue->front();
+      if (is_first_frame_) {
+        buffer_queue->pop();
+        is_first_frame_ = false;
+        break;
+      }
+
+      //TODO: check if the current_audio_frame_duration_ correct
+      float delta = (current_playback_position_ - current_audio_frame_duration_) - buffered_frame->pkt_pos;
+      delta /= 1000000.0f;
+      //视频比音频快了好多，继续渲染上一帧
+      if (delta < -sync_max_time_diff_) {
+        LOGI("video faster than current play position, diff=%f", delta);
+        buffered_frame = nullptr;
+        break;
+        //视频比音频慢了好多，需要从queue中继续取并做丢帧处理，直到拿到合适的帧
+      } else if (delta > sync_max_time_diff_) {
+        LOGI("video slower than current play position, diff=%f", delta);
+        buffer_queue->pop();
+        av_frame_unref(buffered_frame);
+        continue;
+      } else {
+        LOGI("diff=%f", delta);
+        buffer_queue->pop();
+        break;
+      }
+    }
+  }
+
+  *frame = buffered_frame;
+
+  cv_.notify_one();
+
+  return 0;
+}
+int AVSynchronizer::channels() const {
+  return decoder_->channels();
+}
+int AVSynchronizer::sample_rate() const {
+  return decoder_->sample_rate();
 }
