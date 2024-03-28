@@ -30,7 +30,8 @@ void MediaPlayer::Prepare() {
   synchronizer_->Init(path_, decoder_type_);
   int channels = synchronizer_->channels();
   int sample_rate = synchronizer_->sample_rate();
-  audio_renderer_ = std::make_unique<AudioRenderer>(channels, sample_rate, this);
+  int sample_fmt = synchronizer_->sample_fmt();
+  audio_renderer_ = std::make_unique<AudioRenderer>(channels, sample_rate, sample_fmt, this);
   LOGI("channels=%d, sample_rate=%d\n", channels, sample_rate);
   video_renderer_ = std::make_unique<VideoRenderer>(this);
   synchronizer_->Start();

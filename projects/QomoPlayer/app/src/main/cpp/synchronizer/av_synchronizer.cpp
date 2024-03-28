@@ -175,3 +175,6 @@ int AVSynchronizer::channels() const {
 int AVSynchronizer::sample_rate() const {
   return decoder_->sample_rate();
 }
+int AVSynchronizer::sample_fmt() const {
+  return decoder_->sample_fmt();
+}

@@ -25,6 +25,7 @@ set(VIDEO_DECODER_SOURCE_FILES
 ## Renderer
 set(RENDERER_SOURCE_FILES
         renderer/audio/audio_renderer.cpp
+        renderer/audio/opensles_player.cpp
         renderer/video/video_renderer.cpp
         renderer/video/egl_renderer.cpp
         renderer/video/qomo_egl.cpp
@@ -59,6 +60,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         z
         GLESv2
         EGL
+        OpenSLES
         avfilter
         avutil
         avformat

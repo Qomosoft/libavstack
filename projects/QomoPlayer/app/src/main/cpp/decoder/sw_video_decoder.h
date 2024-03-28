@@ -27,6 +27,7 @@ class SWVideoDecoder : public VideoDecoder {
 
   int channels() const override;
   int sample_rate() const override;
+  int sample_fmt() const override;
 
  private:
   int OpenCodecContext(int *stream_idx, AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, AVMediaType type);
@@ -46,4 +47,5 @@ class SWVideoDecoder : public VideoDecoder {
   int audio_stream_index_;
   int channels_;
   int sample_rate_;
+  int sample_fmt_;
 };

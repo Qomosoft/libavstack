@@ -20,4 +20,5 @@ class VideoDecoder {
 
   virtual int channels() const = 0;
   virtual int sample_rate() const = 0;
+  virtual int sample_fmt() const = 0;
 };

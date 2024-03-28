@@ -2,6 +2,7 @@
 // Created by Robin on 2024/3/26.
 //
 
+#include "opensles_player.h"
 #include "frame_callback.h"
 
 #include <memory>
@@ -11,7 +12,10 @@
 
 class AudioRenderer {
  public:
-  AudioRenderer(int channels, int sample_rate, FrameCallback *callback);
+  AudioRenderer(int channels,
+                int sample_rate,
+                int sample_fmt,
+                FrameCallback *callback);
   ~AudioRenderer();
   void Start();
   void Pause();
@@ -23,6 +27,7 @@ class AudioRenderer {
   void AudioRenderLoop();
 
  private:
+  std::unique_ptr<OpenSlEsPlayer> open_sl_es_player_;
   FrameCallback *callback_;
   std::unique_ptr<std::thread> audio_renderer_thread_;
   int channels_;

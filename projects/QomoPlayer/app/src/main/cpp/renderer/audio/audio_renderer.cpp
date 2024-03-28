@@ -7,16 +7,17 @@
 #include "audio_renderer.h"
 #include "logging.h"
 
-AudioRenderer::AudioRenderer(int channels,
-                             int sample_rate,
-                             FrameCallback *callback) :
+AudioRenderer::AudioRenderer(int channels, int sample_rate, int sample_fmt, FrameCallback *callback)
+    :
                              is_playing_(false),
                              is_stopped_(true),
                              audio_renderer_thread_(nullptr),
                              channels_(channels),
                              sample_rate_(sample_rate),
-                             callback_(callback)
-                             {}
+                             callback_(callback) {
+  open_sl_es_player_ = std::make_unique<OpenSlEsPlayer>();
+  open_sl_es_player_->Init(sample_rate, channels, sample_fmt, 2, callback);
+}
 
 AudioRenderer::~AudioRenderer() {
   Stop();
@@ -45,14 +46,16 @@ void AudioRenderer::RenderAudioFrame() {
 
 void AudioRenderer::Start() {
   LOGI("enter");
-  if (audio_renderer_thread_) {
-    LOGE("AudioRenderer already started");
-    return;
-  }
-
-  is_playing_ = true;
-  is_stopped_ = false;
-  audio_renderer_thread_ = std::make_unique<std::thread>(&AudioRenderer::AudioRenderLoop, this);
+  open_sl_es_player_->Start();
+//  if (audio_renderer_thread_) {
+//    LOGE("AudioRenderer already started");
+//    return;
+//  }
+//
+//  is_playing_ = true;
+//  is_stopped_ = false;
+//  audio_renderer_thread_ = std::make_unique<std::thread>(&AudioRenderer::AudioRenderLoop, this);
+  LOGI("leave");
 }
 
 void AudioRenderer::Pause() {
@@ -72,10 +75,12 @@ void AudioRenderer::Stop() {
     return;
   }
 
-  std::unique_lock<std::mutex> lock(mutex_);
-  is_stopped_ = true;
-  cv_.notify_all();
-  audio_renderer_thread_->join();
+  open_sl_es_player_->Stop();
+  open_sl_es_player_->Destroy();
+//  std::unique_lock<std::mutex> lock(mutex_);
+//  is_stopped_ = true;
+//  cv_.notify_all();
+//  audio_renderer_thread_->join();
 }
 
 void AudioRenderer::AudioRenderLoop() {

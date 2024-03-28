@@ -25,6 +25,7 @@ class AVSynchronizer : public FrameCallback {
 
   int channels() const;
   int sample_rate() const;
+  int sample_fmt() const;
 
  private:
   int DecodeFrames();

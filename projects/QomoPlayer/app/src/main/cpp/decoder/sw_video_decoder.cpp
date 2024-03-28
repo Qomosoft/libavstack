@@ -59,6 +59,8 @@ int SWVideoDecoder::Init(const std::string &uri) {
   }
   channels_ = audio_dec_ctx_->channels;
   sample_rate_ = audio_dec_ctx_->sample_rate;
+  sample_fmt_ = audio_dec_ctx_->sample_fmt;
+  AVSampleFormat format = audio_dec_ctx_->sample_fmt;
   av_dump_format(fmt_ctx_, 0, uri.c_str(), 0);
 
   packet_ = av_packet_alloc();
@@ -186,19 +188,19 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
       *decoded_duration += duration_time;
       float pts_time = frame->pts * time_unit;
       float dts_time = frame->pkt_dts * time_unit;
-      LOGI("receive %s frame pkt_pos=%d, pkt_duration=%d, duration_time=%f, pts=%d, pts_time=%f, "
-           "dts=%d, dts_time=%f", av_get_media_type_string(dec->codec->type),
-           frame_->pkt_pos, frame_->pkt_duration, duration_time,
-           frame->pts, pts_time, frame->pkt_dts, dts_time);
+//      LOGI("receive %s frame pkt_pos=%d, pkt_duration=%d, duration_time=%f, pts=%d, pts_time=%f, "
+//           "dts=%d, dts_time=%f", av_get_media_type_string(dec->codec->type),
+//           frame_->pkt_pos, frame_->pkt_duration, duration_time,
+//           frame->pts, pts_time, frame->pkt_dts, dts_time);
     } else {
       float time_unit = av_q2d(fmt_ctx_->streams[video_stream_index_]->time_base);
       float duration_time = frame->pkt_duration * time_unit;
       float pts_time = frame->pts * time_unit;
       float dts_time = frame->pkt_dts * time_unit;
-      LOGI("receive %s frame pkt_pos=%d, pkt_duration=%d, duration_time=%f, pts=%d, pts_time=%f, "
-           "dts=%d, dts_time=%f", av_get_media_type_string(dec->codec->type),
-           frame_->pkt_pos, frame_->pkt_duration, duration_time,
-           frame->pts, pts_time, frame->pkt_dts, dts_time);
+//      LOGI("receive %s frame pkt_pos=%d, pkt_duration=%d, duration_time=%f, pts=%d, pts_time=%f, "
+//           "dts=%d, dts_time=%f", av_get_media_type_string(dec->codec->type),
+//           frame_->pkt_pos, frame_->pkt_duration, duration_time,
+//           frame->pts, pts_time, frame->pkt_dts, dts_time);
     }
 
     frames->emplace_back(av_frame_clone(frame));
@@ -215,5 +217,8 @@ int SWVideoDecoder::channels() const {
 
 int SWVideoDecoder::sample_rate() const {
   return sample_rate_;
+}
+int SWVideoDecoder::sample_fmt() const {
+  return sample_fmt_;
 }
 
