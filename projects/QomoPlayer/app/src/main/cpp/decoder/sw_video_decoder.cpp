@@ -104,46 +104,9 @@ int SWVideoDecoder::DecodeFrames(float duration, std::list<AVFrame *> *frames) {
       dec = video_dec_ctx_;
     }
 
-//    if (is_eof) {
-//      ret = DecodeFrame(audio_dec_ctx_, nullptr, frames, frame_, &decoded_duration);
-//      ret = DecodeFrame(video_dec_ctx_, nullptr, frames, frame_, &decoded_duration);
-//      break;
-//    }
-
     ret = DecodeFrame(dec, packet_, frames, frame_, &decoded_duration);
   }
 
-
-//    avcodec_send_packet(dec, packet_);
-//
-//    while (true) {
-//      ret = avcodec_receive_frame(dec, frame_);
-//      if (ret < 0) {
-//        if (ret == AVERROR_EOF) {
-//          LOGI("Decode return AVERROR_EOF\n");
-//          ret = 0;
-//        } else if (ret == AVERROR(EAGAIN)) {
-////        LOGI("Decode return EAGAIN\n");
-//          ret = 0;
-//        } else {
-//          LOGE("Decode failed, return %d\n", ret);
-//          return ret;
-//        }
-//        break;
-//      }
-//
-//      if (packet_->stream_index == audio_stream_index_) {
-////        LOGI("receive audio frame pkt_pos=%d, pkt_duration=%d", frame_->pkt_pos, frame_->pkt_duration);
-//        decoded_duration += frame_->pkt_duration / 1000000.0f;
-//      } else if (packet_->stream_index == video_stream_index_) {
-////        LOGI("receive video frame pict_type=%d", frame_->pict_type);
-//      }
-//
-//      AVFrame *frame = av_frame_clone(frame_);
-//      frames->emplace_back(frame);
-//      av_packet_unref(packet_);
-//    }
-//  }
 
   return is_eof ? AVERROR_EOF : ret;
 }
@@ -200,14 +163,13 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
                                 std::list<AVFrame *> *frames,
                                 AVFrame *frame,
                                 float *decoded_duration) {
-  int ret = 0;
-  ret = avcodec_send_packet(dec, pkt);
+  int ret = avcodec_send_packet(dec, pkt);
   if (ret < 0) {
     LOGE("avcodec_send_packet failed %s", av_err2str(ret));
     return ret;
   }
 
-  while (ret >= 0) {
+  while (true) {
     ret = avcodec_receive_frame(dec, frame);
     if (ret < 0) {
       if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN)) {
@@ -219,10 +181,26 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
     }
 
     if (dec->codec->type == AVMEDIA_TYPE_AUDIO) {
-      *decoded_duration += frame->pkt_duration / 1000000.0f;
+      float time_unit = av_q2d(fmt_ctx_->streams[audio_stream_index_]->time_base);
+      float duration_time = frame->pkt_duration * time_unit;
+      *decoded_duration += duration_time;
+      float pts_time = frame->pts * time_unit;
+      float dts_time = frame->pkt_dts * time_unit;
+      LOGI("receive %s frame pkt_pos=%d, pkt_duration=%d, duration_time=%f, pts=%d, pts_time=%f, "
+           "dts=%d, dts_time=%f", av_get_media_type_string(dec->codec->type),
+           frame_->pkt_pos, frame_->pkt_duration, duration_time,
+           frame->pts, pts_time, frame->pkt_dts, dts_time);
+    } else {
+      float time_unit = av_q2d(fmt_ctx_->streams[video_stream_index_]->time_base);
+      float duration_time = frame->pkt_duration * time_unit;
+      float pts_time = frame->pts * time_unit;
+      float dts_time = frame->pkt_dts * time_unit;
+      LOGI("receive %s frame pkt_pos=%d, pkt_duration=%d, duration_time=%f, pts=%d, pts_time=%f, "
+           "dts=%d, dts_time=%f", av_get_media_type_string(dec->codec->type),
+           frame_->pkt_pos, frame_->pkt_duration, duration_time,
+           frame->pts, pts_time, frame->pkt_dts, dts_time);
     }
 
-//    AVFrame *frame = av_frame_clone(frame_);
     frames->emplace_back(av_frame_clone(frame));
     av_frame_unref(frame);
     av_packet_unref(packet_);
