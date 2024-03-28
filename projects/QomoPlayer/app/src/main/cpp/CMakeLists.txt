@@ -25,7 +25,7 @@ set(VIDEO_DECODER_SOURCE_FILES
 ## Renderer
 set(RENDERER_SOURCE_FILES
         renderer/audio/audio_renderer.cpp
-        renderer/audio/opensles_player.cpp
+        renderer/audio/opensles_renderer.cpp
         renderer/video/video_renderer.cpp
         renderer/video/egl_renderer.cpp
         renderer/video/qomo_egl.cpp

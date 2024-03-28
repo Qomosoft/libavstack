@@ -11,88 +11,47 @@ AudioRenderer::AudioRenderer(int channels, int sample_rate, int sample_fmt, Fram
     :
                              is_playing_(false),
                              is_stopped_(true),
-                             audio_renderer_thread_(nullptr),
                              channels_(channels),
                              sample_rate_(sample_rate),
                              callback_(callback) {
-  open_sl_es_player_ = std::make_unique<OpenSlEsPlayer>();
-  open_sl_es_player_->Init(sample_rate, channels, sample_fmt, 2, callback);
+  open_sl_es_renderer_ = std::make_unique<OpenSLESRenderer>();
+  open_sl_es_renderer_->Init(sample_rate, channels, sample_fmt, 2, callback);
 }
 
 AudioRenderer::~AudioRenderer() {
   Stop();
 }
 
-void AudioRenderer::RenderAudioFrame() {
-  LOGI("enter");
-  AVFrame *frame = nullptr;
-  int ret = callback_->OnFrameNeeded(&frame, AVMEDIA_TYPE_AUDIO);
-  if (ret == AVERROR_EOF) {
-    LOGI("EOF\n");
-    is_eof_ = true;
-  }
-
-  if (!frame) {
-    LOGE("frame is null\n");
-    return;
-  }
-
-  LOGI("sleep_for %ld nanoseconds\n", frame->pkt_duration);
-  std::this_thread::sleep_for(std::chrono::nanoseconds(frame->pkt_duration));
-  //TODO: play sound
-  av_frame_unref(frame);
-  LOGI("leave");
-}
-
 void AudioRenderer::Start() {
   LOGI("enter");
-  open_sl_es_player_->Start();
-//  if (audio_renderer_thread_) {
-//    LOGE("AudioRenderer already started");
-//    return;
-//  }
-//
-//  is_playing_ = true;
-//  is_stopped_ = false;
-//  audio_renderer_thread_ = std::make_unique<std::thread>(&AudioRenderer::AudioRenderLoop, this);
+  open_sl_es_renderer_->Start();
   LOGI("leave");
 }
 
 void AudioRenderer::Pause() {
-  std::unique_lock<std::mutex> lock(mutex_);
+  if (!is_playing_) {
+    LOGW("AudioRenderer was already paused\n");
+    return;
+  }
   is_playing_ = false;
+  open_sl_es_renderer_->Stop();
 }
 
 void AudioRenderer::Resume() {
-  std::unique_lock<std::mutex> lock(mutex_);
+  if (is_playing_) {
+    LOGW("AudioRenderer was already resumed\n");
+    return;
+  }
   is_playing_ = true;
-  cv_.notify_one();
+  open_sl_es_renderer_->Start();
 }
 
 void AudioRenderer::Stop() {
   if (is_stopped_) {
-    LOGW("AudioRenderer already stopped\n");
+    LOGW("AudioRenderer was already stopped\n");
     return;
   }
 
-  open_sl_es_player_->Stop();
-  open_sl_es_player_->Destroy();
-//  std::unique_lock<std::mutex> lock(mutex_);
-//  is_stopped_ = true;
-//  cv_.notify_all();
-//  audio_renderer_thread_->join();
-}
-
-void AudioRenderer::AudioRenderLoop() {
-  while (!is_stopped_) {
-    std::unique_lock<std::mutex> lock(mutex_);
-    cv_.wait(lock, [this] { return (is_playing_ && !is_eof_) || is_stopped_; });
-
-    if (is_stopped_) {
-      LOGI("AudioRenderLoop stop\n");
-      break;
-    }
-
-    RenderAudioFrame();
-  }
+  open_sl_es_renderer_->Stop();
+  open_sl_es_renderer_->Destroy();
 }

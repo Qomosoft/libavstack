@@ -1,6 +1,6 @@
 #define LOG_TAG "OpenSLPlayer"
 
-#include "opensles_player.h"
+#include "opensles_renderer.h"
 #include "logging.h"
 
 #include <cassert>
@@ -14,24 +14,24 @@ static const int kOutChannels = 2;
 static const AVSampleFormat kOutSampleFmt = AV_SAMPLE_FMT_S16;
 static const int kMaxInputSamples = 1024;
 
-OpenSlEsPlayer::OpenSlEsPlayer() : engine_object_(nullptr),
-                                   engine_interface_(nullptr),
-                                   out_mix_object_(nullptr),
-                                   output_mix_environmental_reverb_(nullptr),
-                                   reverb_settings_(SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT),
-                                   audio_player_object_(nullptr),
-                                   audio_player_interface_(nullptr),
-                                   audio_player_buffer_queue_(nullptr),
-                                   sample_rate_(0),
-                                   channels_(0) {}
+OpenSLESRenderer::OpenSLESRenderer() : engine_object_(nullptr),
+                                       engine_interface_(nullptr),
+                                       out_mix_object_(nullptr),
+                                       output_mix_environmental_reverb_(nullptr),
+                                       reverb_settings_(SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT),
+                                       audio_player_object_(nullptr),
+                                       audio_player_interface_(nullptr),
+                                       audio_player_buffer_queue_(nullptr),
+                                       sample_rate_(0),
+                                       channels_(0) {}
 
-OpenSlEsPlayer::~OpenSlEsPlayer() = default;
+OpenSLESRenderer::~OpenSLESRenderer() = default;
 
-int OpenSlEsPlayer::Init(int sample_rate,
-                         int channels,
-                         int sample_fmt,
-                         int buffer_size,
-                         FrameCallback *callback) {
+int OpenSLESRenderer::Init(int sample_rate,
+                           int channels,
+                           int sample_fmt,
+                           int buffer_size,
+                           FrameCallback *callback) {
   LOGI("sample_rate=%d, channels=%d, buffer_size=%d\n", sample_rate, channels, buffer_size);
   callback_ = callback;
   sample_rate_ = sample_rate * 1000;
@@ -54,7 +54,7 @@ int OpenSlEsPlayer::Init(int sample_rate,
   return 0;
 }
 
-void OpenSlEsPlayer::CreateEngine() {
+void OpenSLESRenderer::CreateEngine() {
   // step 1. create engine
   SLresult result = slCreateEngine(&engine_object_, 0, nullptr, 0, nullptr, nullptr);
   CHECK_SL_ERROR(result);
@@ -132,11 +132,11 @@ void OpenSlEsPlayer::CreateEngine() {
   CHECK_SL_ERROR(result);
 }
 
-void OpenSlEsPlayer::Finalize() {
+void OpenSLESRenderer::Finalize() {
   LOGI("Finalize");
 }
 
-void OpenSlEsPlayer::Start() {
+void OpenSLESRenderer::Start() {
   // step 7. start playing
   SLresult result = (*audio_player_interface_)->SetPlayState(audio_player_interface_, SL_PLAYSTATE_PLAYING);
   CHECK_SL_ERROR(result);
@@ -144,13 +144,13 @@ void OpenSlEsPlayer::Start() {
   BufferQueueCallback(audio_player_buffer_queue_, this);
 }
 
-void OpenSlEsPlayer::Stop() {
+void OpenSLESRenderer::Stop() {
   if (audio_player_interface_) {
     (*audio_player_interface_)->SetPlayState(audio_player_interface_, SL_PLAYSTATE_STOPPED);
   }
 }
 
-void OpenSlEsPlayer::Destroy() {
+void OpenSLESRenderer::Destroy() {
   // step 1. destroy audio player
   if (audio_player_object_) {
     (*audio_player_object_)->Destroy(audio_player_object_);
@@ -176,9 +176,9 @@ void OpenSlEsPlayer::Destroy() {
   swr_free(&swr_context_);
 }
 
-void OpenSlEsPlayer::BufferQueueCallback(SLAndroidSimpleBufferQueueItf buffer_queue_itf,
-                                         void *context) {
-    auto *player = reinterpret_cast<OpenSlEsPlayer *>(context);
+void OpenSLESRenderer::BufferQueueCallback(SLAndroidSimpleBufferQueueItf buffer_queue_itf,
+                                           void *context) {
+    auto *player = reinterpret_cast<OpenSLESRenderer *>(context);
     if (!player) {
       LOGE("error: invalid context");
       return;
@@ -186,15 +186,13 @@ void OpenSlEsPlayer::BufferQueueCallback(SLAndroidSimpleBufferQueueItf buffer_qu
     player->OnBufferQueueCallback();
 }
 
-void OpenSlEsPlayer::OnBufferQueueCallback() {
+void OpenSLESRenderer::OnBufferQueueCallback() {
   LOGI("enter");
   int pcm_data_size = static_cast<int>(pcm_data_.size());
   AVFrame *frame = nullptr;
   int ret = callback_->OnFrameNeeded(&frame, AVMEDIA_TYPE_AUDIO);
-//  int pkt_size = av_samples_get_buffer_size(nullptr, channels_, frame->nb_samples, frame->sampe_format, 0);
   if (ret == AVERROR_EOF) {
     LOGI("EOF\n");
-//    is_eof_ = true;
   }
 
   if (!frame) {
@@ -202,18 +200,12 @@ void OpenSlEsPlayer::OnBufferQueueCallback() {
     return;
   }
 
-//  LOGI("sleep_for %ld nanoseconds\n", frame->pkt_duration);
-//  std::this_thread::sleep_for(std::chrono::nanoseconds(frame->pkt_duration));
-  //TODO: play sound
-//  int read_bytes = frame->pkt_size;
-//  av_frame_unref(frame);
   uint8_t *data = pcm_data_.data();
   int out_nb_samples = swr_convert(swr_context_, &data, frame->nb_samples, (const uint8_t**) frame->data, frame->nb_samples);
   if (out_nb_samples > 0) {
-//    SLresult result = (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, pcm_data_.data(), read_bytes);
     SLresult result = (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, data, pcm_data_size);
     CHECK_SL_ERROR(result);
-  av_frame_unref(frame);
+    av_frame_unref(frame);
   } else {
     LOGI("end of file");
   }

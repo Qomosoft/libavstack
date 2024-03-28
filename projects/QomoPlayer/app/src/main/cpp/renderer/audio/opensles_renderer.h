@@ -13,10 +13,10 @@ extern "C" {
 #include <vector>
 #include <fstream>
 
-class OpenSlEsPlayer {
+class OpenSLESRenderer {
  public:
-  OpenSlEsPlayer();
-  virtual ~OpenSlEsPlayer();
+  OpenSLESRenderer();
+  virtual ~OpenSLESRenderer();
   int Init(int sample_rate,
            int channels,
            int sample_fmt,
