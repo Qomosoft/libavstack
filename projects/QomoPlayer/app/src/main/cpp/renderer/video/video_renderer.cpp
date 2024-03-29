@@ -13,6 +13,7 @@ VideoRenderer::~VideoRenderer() { }
 
 int VideoRenderer::Init() {
   egl_renderer_ = std::make_unique<EglRenderer>();
+  egl_renderer_->Initialize();
   return 0;
 }
 
@@ -28,7 +29,6 @@ int VideoRenderer::SetWindowSize(int width, int height) {
 }
 
 int VideoRenderer::Start() {
-  egl_renderer_->Initialize();
   egl_renderer_->Start();
   return 0;
 }

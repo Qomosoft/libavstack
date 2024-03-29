@@ -38,20 +38,8 @@ EglRenderer::~EglRenderer() {
 }
 
 int EglRenderer::Initialize() {
-  PostOnRenderThread([=] {
-    egl_ = std::make_unique<QomoEgl>();
-    egl_->Initialize();
-    egl_surface_ = egl_->CreateWindowSurface(window_);
-    egl_->MakeCurrent(egl_surface_);
-
-    rgb_texture_ = CreateRgbTexture();
-    LOGI("CreateRgbTexture rgb_texture=%d", rgb_texture_);
-
-    shader_ = std::make_unique<Shader>(kVertexShader, kFragmentShader);
-    shader_->BindAttribLocation(attribute_vertex_index_, "position");
-    shader_->BindAttribLocation(attribute_texcoord_index_, "texcoord");
-    shader_->Use();
-  });
+  egl_ = std::make_unique<QomoEgl>();
+  egl_->Initialize();
 
   return 0;
 }
@@ -63,7 +51,19 @@ int EglRenderer::SetWindow(ANativeWindow *window) {
     return -1;
   }
 
-  window_ = window;
+  PostOnRenderThread([=] {
+    window_ = window;
+    egl_surface_ = egl_->CreateWindowSurface(window_);
+    egl_->MakeCurrent(egl_surface_);
+
+    rgb_texture_ = CreateRgbTexture();
+    LOGI("CreateRgbTexture rgb_texture=%d", rgb_texture_);
+
+    shader_ = std::make_unique<Shader>(kVertexShader, kFragmentShader);
+    shader_->BindAttribLocation(attribute_vertex_index_, "position");
+    shader_->BindAttribLocation(attribute_texcoord_index_, "texcoord");
+    shader_->Use();
+  });
   return 0;
 }
 

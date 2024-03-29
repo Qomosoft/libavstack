@@ -59,8 +59,8 @@ void MediaPlayer::Start() {
 
   is_playing_ = true;
   is_stopped_ = false;
-  video_renderer_->Start();
   audio_renderer_->Start();
+  video_renderer_->Start();
 }
 
 void MediaPlayer::Stop() {
