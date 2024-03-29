@@ -25,6 +25,7 @@ AudioRenderer::~AudioRenderer() {
 void AudioRenderer::Start() {
   LOGI("enter");
   open_sl_es_renderer_->Start();
+  is_stopped_ = false;
   LOGI("leave");
 }
 

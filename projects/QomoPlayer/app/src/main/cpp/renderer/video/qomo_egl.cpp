@@ -103,7 +103,7 @@ int QomoEgl::MakeCurrent(EGLSurface egl_surface) {
 
 int QomoEgl::SwapBuffers(EGLSurface egl_surface) {
   if (!eglSwapBuffers(egl_display_, egl_surface)) {
-    LOGE("eglSwapBuffers return %d", eglGetError());
+    LOGE("eglSwapBuffers return 0x%x", eglGetError());
     return -1;
   }
 

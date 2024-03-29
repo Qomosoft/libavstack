@@ -53,6 +53,12 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 //        });
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        player.stop();
+    }
+
     private void initViews() {
         surfaceView = findViewById(R.id.surface_content);
         SurfaceHolder holder = surfaceView.getHolder();

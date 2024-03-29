@@ -28,8 +28,8 @@ int VideoRenderer::SetWindowSize(int width, int height) {
 }
 
 int VideoRenderer::Start() {
-  egl_renderer_->Start();
   egl_renderer_->Initialize();
+  egl_renderer_->Start();
   return 0;
 }
 
