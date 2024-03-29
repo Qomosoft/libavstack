@@ -211,6 +211,14 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
   return ret;
 }
 
+float SWVideoDecoder::GetAudioTimeUnit() const {
+  return av_q2d(fmt_ctx_->streams[audio_stream_index_]->time_base);
+}
+
+float SWVideoDecoder::GetVideoTimeUnit() const {
+  return av_q2d(fmt_ctx_->streams[video_stream_index_]->time_base);
+}
+
 int SWVideoDecoder::channels() const {
   return channels_;
 }
@@ -221,4 +229,3 @@ int SWVideoDecoder::sample_rate() const {
 int SWVideoDecoder::sample_fmt() const {
   return sample_fmt_;
 }
-

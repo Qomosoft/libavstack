@@ -18,6 +18,9 @@ class VideoDecoder {
   virtual int Finalize() = 0;
   virtual int DecodeFrames(float duration, std::list<AVFrame *> *frames) = 0;
 
+  virtual float GetAudioTimeUnit() const = 0;
+  virtual float GetVideoTimeUnit() const = 0;
+
   virtual int channels() const = 0;
   virtual int sample_rate() const = 0;
   virtual int sample_fmt() const = 0;

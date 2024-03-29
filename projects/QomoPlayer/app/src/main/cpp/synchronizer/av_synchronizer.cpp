@@ -86,7 +86,8 @@ int AVSynchronizer::DecodeFrames() {
 
     for (auto frame : frames) {
       if (frame->pict_type == AV_PICTURE_TYPE_NONE) {
-        buffered_duration_ += frame->pkt_duration / 1000000.0f;
+        float time_unit = decoder_->GetAudioTimeUnit();
+        buffered_duration_ += frame->pkt_duration * time_unit;
         audio_frame_buffer_->emplace(frame);
       } else {
         video_frame_buffer_->emplace(frame);
@@ -129,9 +130,10 @@ int AVSynchronizer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
   if (type == AVMEDIA_TYPE_AUDIO) {
     buffered_frame = buffer_queue->front();
     buffer_queue->pop();
-    current_playback_position_ = buffered_frame->pkt_pos;
-    current_audio_frame_duration_ = buffered_frame->pkt_duration;
-    buffered_duration_ -= buffered_frame->pkt_duration / 1000000.0f;
+    float time_unit = decoder_->GetAudioTimeUnit();
+    current_playback_position_ = buffered_frame->pts * time_unit;
+    current_audio_frame_duration_ = buffered_frame->pkt_duration * time_unit;
+    buffered_duration_ -= current_audio_frame_duration_;
   } else if (type == AVMEDIA_TYPE_VIDEO) {
     while (true) {
       buffered_frame = buffer_queue->front();
@@ -142,8 +144,8 @@ int AVSynchronizer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
       }
 
       //TODO: check if the current_audio_frame_duration_ correct
-      float delta = (current_playback_position_ - current_audio_frame_duration_) - buffered_frame->pkt_pos;
-      delta /= 1000000.0f;
+      float time_unit = decoder_->GetVideoTimeUnit();
+      float delta = (current_playback_position_ - current_audio_frame_duration_) - buffered_frame->pts * time_unit;
       //视频比音频快了好多，继续渲染上一帧
       if (delta < -sync_max_time_diff_) {
         LOGI("video faster than current play position, diff=%f", delta);

@@ -25,6 +25,9 @@ class SWVideoDecoder : public VideoDecoder {
   int Finalize() override;
   int DecodeFrames(float duration, std::list<AVFrame *> *frames) override;
 
+  float GetAudioTimeUnit() const override;
+  float GetVideoTimeUnit() const override;
+
   int channels() const override;
   int sample_rate() const override;
   int sample_fmt() const override;
