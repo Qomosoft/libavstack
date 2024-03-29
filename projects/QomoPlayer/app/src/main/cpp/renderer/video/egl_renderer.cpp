@@ -1,7 +1,15 @@
+#define LOG_TAG "EglRenderer"
+
+extern "C" {
+#include "libavutil/imgutils.h"
+#include "libswscale/swscale.h"
+#include "libavcodec/avcodec.h"
+}
+
 #include "egl_renderer.h"
 #include "logging.h"
 
-#define LOG_TAG "EglRenderer"
+static const AVPixelFormat kOutPixFmt = AV_PIX_FMT_RGBA;
 
 static const char* kVertexShader =
     "attribute vec4 position;   \n"
@@ -73,6 +81,10 @@ int EglRenderer::Stop() {
 
   cv_.notify_all();
   render_thread_->join();
+  if (sws_context_) {
+    sws_freeContext(sws_context_);
+    sws_context_ = nullptr;
+  }
   return 0;
 }
 
@@ -81,16 +93,36 @@ int EglRenderer::SetWindowSize(int width, int height) {
   width_ = width;
   height_ = height;
 
-//  rgb_generator_ = std::make_unique<RgbGenerator>(200, 200);
-//  DrawRgb(rgb_generator_->data(), 200, 200);
-
   return 0;
 }
 
-void EglRenderer::DrawRgb(const std::vector<uint8_t> &rgb, int frame_width, int frame_height) {
+void EglRenderer::DrawRgb(AVFrame *frame, int frame_width, int frame_height) {
   LOGI("frame_width=%d, frame_height=%d", frame_width, frame_height);
   PostOnRenderThread([=] {
     LOGI("start");
+    if (sws_context_ == nullptr) {
+      sws_context_ = sws_getContext(frame->width, frame->height,
+                                    static_cast<AVPixelFormat>(frame->format),
+                                    frame->width, frame->height, kOutPixFmt,
+                                    SWS_BILINEAR, nullptr, nullptr, nullptr);
+      if (!sws_context_) {
+        LOGE("sws_getContext failed\n");
+        return;
+      }
+
+      int rgb_data_size = av_image_get_buffer_size(kOutPixFmt, frame->width, frame->height, 1);
+      rgb_data_ = std::vector<uint8_t>(rgb_data_size, 0);
+    }
+
+    uint8_t *rgb_data_array = rgb_data_.data();
+    AVFrame *rgb_frame = av_frame_alloc();
+    av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, rgb_data_array,
+                         kOutPixFmt, frame->width, frame->height, 1);
+    int ret = sws_scale(sws_context_, frame->data, frame->linesize, 0, frame->height, rgb_frame->data, rgb_frame->linesize);
+    if (ret < 0) {
+      LOGE("sws_scale failed %s", av_err2str(ret));
+    }
+    SetWindowSize(frame->width, frame->height);
 
     // load rgb data to texture
     glActiveTexture(GL_TEXTURE0);
@@ -98,7 +130,9 @@ void EglRenderer::DrawRgb(const std::vector<uint8_t> &rgb, int frame_width, int 
     if (CheckGlError("glBindTexture")) {
       return;
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb.data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb_data_.data());
+    av_frame_unref(frame);
+    av_frame_unref(rgb_frame);
     if (CheckGlError("glTexImage2D")) {
       return;
     }

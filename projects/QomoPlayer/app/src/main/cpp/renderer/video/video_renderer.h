@@ -4,10 +4,6 @@
 
 #pragma once
 
-extern "C" {
-#include "libswscale/swscale.h"
-}
-
 #include "frame_callback.h"
 #include "egl_renderer.h"
 
@@ -29,6 +25,4 @@ class VideoRenderer {
  private:
   FrameCallback *callback_;
   std::unique_ptr<EglRenderer> egl_renderer_;
-  SwsContext *sws_context_ = nullptr;
-  std::vector<uint8_t> rgb_data_;
 };

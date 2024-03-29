@@ -1,7 +1,12 @@
 #pragma once
 
+extern "C" {
+#include "libswscale/swscale.h"
+}
+
 #include "qomo_egl.h"
 #include "shader.h"
+#include "libavutil/frame.h"
 //#include "rgb_generator.h"
 
 #include <GLES2/gl2.h>
@@ -30,7 +35,7 @@ class EglRenderer {
 
   int SetWindowSize(int width, int height);
 
-  void DrawRgb(const std::vector<uint8_t> &rgb, int frame_width, int frame_height);
+  void DrawRgb(AVFrame *frame, int frame_width, int frame_height);
 
  private:
 
@@ -59,4 +64,6 @@ class EglRenderer {
   int attribute_texcoord_index_;
   int width_;
   int height_;
+  SwsContext *sws_context_ = nullptr;
+  std::vector<uint8_t> rgb_data_;
 };
