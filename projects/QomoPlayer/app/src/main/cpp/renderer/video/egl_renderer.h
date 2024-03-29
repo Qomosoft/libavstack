@@ -30,8 +30,9 @@ class EglRenderer {
 
   int SetWindowSize(int width, int height);
 
- private:
   void DrawRgb(const std::vector<uint8_t> &rgb, int frame_width, int frame_height);
+
+ private:
 
   template <typename F, typename...Args>
   void PostOnRenderThread(F &&f, Args &&...args);

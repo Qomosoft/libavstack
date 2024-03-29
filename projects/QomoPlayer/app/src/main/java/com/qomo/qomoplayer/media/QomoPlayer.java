@@ -23,6 +23,10 @@ public class QomoPlayer {
         native_setSurface(mNativeHandle, surface);
     }
 
+    public void setWindowSize(int width, int height) {
+        native_setWindowSize(mNativeHandle, width, height);
+    }
+
     public void setVideoScalingMode(int mode) {
         native_setVideoScalingMode(mNativeHandle, mode);
     }
@@ -65,6 +69,8 @@ public class QomoPlayer {
     private native void native_setVideoScalingMode(long nativeHandle, int mode);
     private native void native_setDisplay(long nativeHandle, SurfaceHolder sh);
     private native void native_setSurface(long nativeHandle, Surface surface);
+
+    private native void native_setWindowSize(long nativeHandle, int width, int height);
     private native void native_setDataSource(long nativeHandle, String path);
     private native void native_prepare(long nativeHandle);
     private native void native_prepareAsync(long nativeHandle);

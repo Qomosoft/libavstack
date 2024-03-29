@@ -8,12 +8,14 @@ extern "C" {
 #include "libavfilter/avfilter.h"
 }
 
+#include "logging.h"
+#include "media/media_player.h"
+
 #include <jni.h>
 #include <string>
 #include <sstream>
-#include "logging.h"
-#include "media/media_player.h"
 #include <android/log.h>
+#include <android/native_window_jni.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +61,18 @@ Java_com_qomo_qomoplayer_media_QomoPlayer_native_1setSurface(JNIEnv *env, jobjec
   // TODO: implement native_setSurface()
   MediaPlayer *engine = reinterpret_cast<MediaPlayer *>(native_handle);
   CHECK(!engine, "engine is null");
+  ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
+  engine->SetSurface(window);
+}
+JNIEXPORT void JNICALL
+Java_com_qomo_qomoplayer_media_QomoPlayer_native_1setWindowSize(JNIEnv *env,
+                                                                jobject thiz,
+                                                                jlong native_handle,
+                                                                jint width,
+                                                                jint height) {
+  MediaPlayer *engine = reinterpret_cast<MediaPlayer *>(native_handle);
+  CHECK(!engine, "engine is null");
+  engine->SetWindowSize(width, height);
 }
 JNIEXPORT void JNICALL
 Java_com_qomo_qomoplayer_media_QomoPlayer_native_1setDataSource(JNIEnv *env, jobject thiz,

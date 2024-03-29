@@ -18,6 +18,8 @@
   virtual ~MediaPlayer();
   void Init(int decoder_type);
   void Finalize();
+  void SetSurface(ANativeWindow *window);
+  void SetWindowSize(int width, int height);
   void SetDataSource(const std::string& path);
   void Prepare();
   void PrepareAsync();

@@ -19,6 +19,14 @@ void MediaPlayer::Finalize() {
   Stop();
 }
 
+void MediaPlayer::SetSurface(ANativeWindow *window) {
+  video_renderer_->SetWindow(window);
+}
+
+void MediaPlayer::SetWindowSize(int width, int height) {
+  video_renderer_->SetWindowSize(width, height);
+}
+
 void MediaPlayer::SetDataSource(const std::string &path) {
   LOGI("path=%s", path.c_str());
   path_ = path;
@@ -34,6 +42,7 @@ void MediaPlayer::Prepare() {
   audio_renderer_ = std::make_unique<AudioRenderer>(channels, sample_rate, sample_fmt, this);
   LOGI("channels=%d, sample_rate=%d\n", channels, sample_rate);
   video_renderer_ = std::make_unique<VideoRenderer>(this);
+  video_renderer_->Init();
   synchronizer_->Start();
 }
 
@@ -50,6 +59,7 @@ void MediaPlayer::Start() {
 
   is_playing_ = true;
   is_stopped_ = false;
+  video_renderer_->Start();
   audio_renderer_->Start();
 }
 
