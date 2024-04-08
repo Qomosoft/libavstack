@@ -38,7 +38,7 @@ int SWVideoDecoder::Init(const std::string &uri) {
   LOGI("uri=%s", uri.c_str());
   int ret = avformat_open_input(&fmt_ctx_, uri.c_str(), nullptr, nullptr);
   if (ret < 0) {
-    LOGE("Could not open data source: %s, return %d\n", uri.c_str(), ret);
+    LOGE("Could not open data source: %s, return %s\n", uri.c_str(), av_err2str(ret));
     return ret;
   }
 
