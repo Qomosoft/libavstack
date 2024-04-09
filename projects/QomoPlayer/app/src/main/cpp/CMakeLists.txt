@@ -10,6 +10,7 @@ link_directories(${FFMPEG}/lib)
 ## Media Player
 set(MEDIA_PLAYER_SOURCE_FILES
         media/media_player.cpp
+        media/android_media_player_callback.cpp
         )
 
 ## AVSynchronizer

@@ -13,12 +13,13 @@ import android.view.View;
 import android.widget.Button;
 
 import com.qomo.qomoplayer.databinding.ActivityMainBinding;
+import com.qomo.qomoplayer.media.OnCompletionListener;
 import com.qomo.qomoplayer.media.QomoPlayer;
 import com.qomo.qomoplayer.utils.AssetUtils;
 
 import java.io.File;
 
-public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
+public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback, OnCompletionListener {
     private static final String TAG = "MainActivity";
     private SurfaceView surfaceView;
     private Button playButton;
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         prepareVideo();
 
         player.setDataSource(videoPath);
+        player.setOnCompletionListener(this);
         player.prepare();
 
         // Example of a call to a native method
@@ -88,5 +90,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
 
+    }
+
+    @Override
+    public void onCompletion() {
+        Log.e(TAG, "onCompletion");
     }
 }

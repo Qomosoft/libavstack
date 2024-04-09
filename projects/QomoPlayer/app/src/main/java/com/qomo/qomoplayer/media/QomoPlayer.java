@@ -6,8 +6,9 @@ import android.view.SurfaceHolder;
 
 import com.qomo.qomoplayer.Constants;
 
-public class QomoPlayer {
+public class QomoPlayer implements OnCompletionListener {
     public static final String TAG = "QomoPlayer";
+    private OnCompletionListener mOnCompletionListener;
     private long mNativeHandle = 0;
     public QomoPlayer() {
         mNativeHandle = native_init(Constants.CodecType.SWDecoder);
@@ -55,11 +56,23 @@ public class QomoPlayer {
         native_pause(mNativeHandle);
     }
 
+    public void setOnCompletionListener(OnCompletionListener listener) {
+        mOnCompletionListener = listener;
+        native_setCallback(mNativeHandle);
+    }
+
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
         native_finalize(mNativeHandle);
         mNativeHandle = 0;
+    }
+
+    @Override
+    public void onCompletion() {
+        if (mOnCompletionListener != null) {
+            mOnCompletionListener.onCompletion();
+        }
     }
 
     private static native long native_init(int decoderType);
@@ -78,4 +91,6 @@ public class QomoPlayer {
     private native void native_start(long nativeHandle);
     private native void native_pause(long nativeHandle);
     private native void native_stop(long nativeHandle);
+
+    private native void native_setCallback(long nativeHandle);
 }

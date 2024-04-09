@@ -5,6 +5,7 @@
 #define LOG_TAG "MediaPlayer"
 
 #include "media_player.h"
+#include "media_player_callback.h"
 #include "av_synchronizer.h"
 #include "audio/audio_renderer.h"
 #include "video/video_renderer.h"
@@ -27,6 +28,7 @@
   void Stop();
   void Pause();
   void Seek(float position);
+  void SetCallback(std::shared_ptr<MediaPlayerCallback> callback);
 
   int OnFrameNeeded(AVFrame **frame, AVMediaType type) override;
 
@@ -39,4 +41,6 @@
   int decoder_type_;
   bool is_playing_ = false;
   bool is_stopped_ = true;
+
+  std::shared_ptr<MediaPlayerCallback> callback_ = nullptr;
 };

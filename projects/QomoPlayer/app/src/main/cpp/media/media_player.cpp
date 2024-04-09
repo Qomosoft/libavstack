@@ -86,15 +86,22 @@ void MediaPlayer::Pause() {
 }
 
 void MediaPlayer::Seek(float position) {
-
 }
 
 int MediaPlayer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
+  int ret;
   if (type == AVMEDIA_TYPE_AUDIO) {
-    int ret =  synchronizer_->OnFrameNeeded(frame, type);
-    video_renderer_->OnDraw();
-    return ret;
+    ret = synchronizer_->OnFrameNeeded(frame, type);
+    if (ret != AVERROR_EOF) video_renderer_->OnDraw();
+  } else {
+    ret = synchronizer_->OnFrameNeeded(frame, type);
   }
 
-  return synchronizer_->OnFrameNeeded(frame, type);
+  if (ret == AVERROR_EOF && callback_) callback_->OnCompletion();
+
+  return ret;
+}
+
+void MediaPlayer::SetCallback(std::shared_ptr<MediaPlayerCallback> callback) {
+  callback_ = callback;
 }

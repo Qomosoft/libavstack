@@ -9,7 +9,8 @@ extern "C" {
 }
 
 #include "logging.h"
-#include "media/media_player.h"
+#include "media_player.h"
+#include "android_media_player_callback.h"
 
 #include <jni.h>
 #include <string>
@@ -118,6 +119,17 @@ Java_com_qomo_qomoplayer_media_QomoPlayer_native_1stop(JNIEnv *env, jobject thiz
   MediaPlayer *engine = reinterpret_cast<MediaPlayer *>(native_handle);
   CHECK(!engine, "engine is null");
   engine->Stop();
+}
+
+JNIEXPORT void JNICALL
+Java_com_qomo_qomoplayer_media_QomoPlayer_native_1setCallback(JNIEnv *env,
+                                                              jobject thiz,
+                                                              jlong native_handle) {
+  MediaPlayer *engine = reinterpret_cast<MediaPlayer *>(native_handle);
+  CHECK(!engine, "engine is null");
+  JavaVM *jvm = nullptr;
+  env->GetJavaVM(&jvm);
+  engine->SetCallback(std::make_shared<AndroidMediaPlayerCallback>(jvm, thiz));
 }
 
 #ifdef __cplusplus

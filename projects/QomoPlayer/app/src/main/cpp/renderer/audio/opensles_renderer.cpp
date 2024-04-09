@@ -140,7 +140,7 @@ void OpenSLESRenderer::Start() {
   // step 7. start playing
   SLresult result = (*audio_player_interface_)->SetPlayState(audio_player_interface_, SL_PLAYSTATE_PLAYING);
   CHECK_SL_ERROR(result);
-
+  is_eof_ = false;
   BufferQueueCallback(audio_player_buffer_queue_, this);
 }
 
@@ -188,10 +188,16 @@ void OpenSLESRenderer::BufferQueueCallback(SLAndroidSimpleBufferQueueItf buffer_
 
 void OpenSLESRenderer::OnBufferQueueCallback() {
   LOGI("enter");
+  if (is_eof_) {
+    LOGI("EOF\n");
+    return;
+  }
+
   int pcm_data_size = static_cast<int>(pcm_data_.size());
   AVFrame *frame = nullptr;
   int ret = callback_->OnFrameNeeded(&frame, AVMEDIA_TYPE_AUDIO);
   if (ret == AVERROR_EOF) {
+    is_eof_ = true;
     LOGI("EOF\n");
   }
 

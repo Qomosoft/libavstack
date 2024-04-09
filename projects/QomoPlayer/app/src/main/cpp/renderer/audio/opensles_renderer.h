@@ -48,4 +48,5 @@ class OpenSLESRenderer {
 
   FrameCallback *callback_;
   SwrContext *swr_context_;
+  bool is_eof_ = false;
 };
