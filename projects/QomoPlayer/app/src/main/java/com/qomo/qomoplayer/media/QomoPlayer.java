@@ -56,6 +56,10 @@ public class QomoPlayer implements OnCompletionListener {
         native_pause(mNativeHandle);
     }
 
+    public void seekTo(float seconds) {
+        native_seekTo(mNativeHandle, seconds);
+    }
+
     public void setOnCompletionListener(OnCompletionListener listener) {
         mOnCompletionListener = listener;
         native_setCallback(mNativeHandle);
@@ -91,6 +95,8 @@ public class QomoPlayer implements OnCompletionListener {
     private native void native_start(long nativeHandle);
     private native void native_pause(long nativeHandle);
     private native void native_stop(long nativeHandle);
+
+    private native void native_seekTo(long nativeHandle, float seconds);
 
     private native void native_setCallback(long nativeHandle);
 }

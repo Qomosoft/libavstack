@@ -43,6 +43,7 @@ void MediaPlayer::Prepare() {
   LOGI("channels=%d, sample_rate=%d\n", channels, sample_rate);
   video_renderer_ = std::make_unique<VideoRenderer>(this);
   video_renderer_->Init();
+  video_renderer_->Start();
   synchronizer_->Start();
 }
 
@@ -60,7 +61,6 @@ void MediaPlayer::Start() {
   is_playing_ = true;
   is_stopped_ = false;
   audio_renderer_->Start();
-  video_renderer_->Start();
 }
 
 void MediaPlayer::Stop() {
@@ -85,7 +85,9 @@ void MediaPlayer::Pause() {
   audio_renderer_->Pause();
 }
 
-void MediaPlayer::Seek(float position) {
+void MediaPlayer::Seek(float seconds) {
+  LOGI("seconds=%f", seconds);
+  synchronizer_->Seek(seconds);
 }
 
 int MediaPlayer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {

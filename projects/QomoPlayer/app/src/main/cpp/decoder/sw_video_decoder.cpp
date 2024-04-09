@@ -211,6 +211,24 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
   return ret;
 }
 
+void SWVideoDecoder::SeekToPosition(float seconds) {
+  int64_t seek_target = seconds * 1000000;
+  int64_t seek_min = INT64_MIN;
+  int64_t seek_max = INT64_MAX;
+  int ret = avformat_seek_file(fmt_ctx_, -1, seek_min, seek_target, seek_max, 0);
+  if (ret < 0) {
+    LOGE("avformat_seek_file failed: %s", av_err2str(ret));
+  } else {
+    avcodec_flush_buffers(audio_dec_ctx_);
+    avcodec_flush_buffers(video_dec_ctx_);
+  }
+}
+
+int SWVideoDecoder::Seek(float seconds) {
+  SeekToPosition(seconds);
+  return 0;
+}
+
 float SWVideoDecoder::GetAudioTimeUnit() const {
   return av_q2d(fmt_ctx_->streams[audio_stream_index_]->time_base);
 }

@@ -17,6 +17,7 @@ class VideoDecoder {
   virtual int Init(const std::string &uri) = 0;
   virtual int Finalize() = 0;
   virtual int DecodeFrames(float duration, std::list<AVFrame *> *frames) = 0;
+  virtual int Seek(float seconds) = 0;
 
   virtual float GetAudioTimeUnit() const = 0;
   virtual float GetVideoTimeUnit() const = 0;

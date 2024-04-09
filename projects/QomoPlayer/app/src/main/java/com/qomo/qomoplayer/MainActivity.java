@@ -91,6 +91,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void onCompletion() {
         Log.e(TAG, "onCompletion");
+        player.pause();
+        player.seekTo(0);
     }
 
     @Override

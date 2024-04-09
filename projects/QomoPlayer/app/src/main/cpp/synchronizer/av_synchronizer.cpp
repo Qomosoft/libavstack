@@ -73,9 +73,25 @@ void AVSynchronizer::Stop() {
 }
 
 int AVSynchronizer::DecodeFrames() {
-  LOGI("enter");
   float duration = 0.1f;
   int ret;
+  if (is_seeking_) {
+    while (!audio_frame_buffer_->empty()) {
+      AVFrame *frame = audio_frame_buffer_->front();
+      av_frame_unref(frame);
+      audio_frame_buffer_->pop();
+    }
+    while (!video_frame_buffer_->empty()) {
+      AVFrame *frame = video_frame_buffer_->front();
+      av_frame_unref(frame);
+      video_frame_buffer_->pop();
+    }
+
+    decoder_->Seek(seek_position_);
+    buffered_duration_ = 0;
+    is_seeking_ = false;
+  }
+
   while (buffered_duration_ < max_buffered_duration_) {
     std::list<AVFrame *> frames;
     ret = decoder_->DecodeFrames(duration, &frames);
@@ -96,6 +112,14 @@ int AVSynchronizer::DecodeFrames() {
   }
 
   return ret;
+}
+
+int AVSynchronizer::Seek(float seconds) {
+  LOGI("seconds=%f", seconds);
+  is_eof_ = false;
+  seek_position_ = seconds;
+  is_seeking_ = true;
+  return 0;
 }
 
 void AVSynchronizer::DecoderLoop() {
@@ -148,17 +172,17 @@ int AVSynchronizer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
       float delta = (current_playback_position_ - current_audio_frame_duration_) - buffered_frame->pts * time_unit;
       //视频比音频快了好多，继续渲染上一帧
       if (delta < -sync_max_time_diff_) {
-        LOGI("video faster than current play position, diff=%f", delta);
+//        LOGI("video faster than current play position, diff=%f", delta);
         buffered_frame = nullptr;
         break;
         //视频比音频慢了好多，需要从queue中继续取并做丢帧处理，直到拿到合适的帧
       } else if (delta > sync_max_time_diff_) {
-        LOGI("video slower than current play position, diff=%f", delta);
+//        LOGI("video slower than current play position, diff=%f", delta);
         buffer_queue->pop();
         av_frame_unref(buffered_frame);
         continue;
       } else {
-        LOGI("diff=%f", delta);
+//        LOGI("diff=%f", delta);
         buffer_queue->pop();
         break;
       }

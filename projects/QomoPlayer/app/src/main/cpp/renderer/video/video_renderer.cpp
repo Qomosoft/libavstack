@@ -34,7 +34,7 @@ int VideoRenderer::Start() {
 }
 
 void VideoRenderer::OnDraw() {
-  LOGI("enter");
+//  LOGI("enter");
   AVFrame *frame = nullptr;
   int ret = callback_->OnFrameNeeded(&frame, AVMEDIA_TYPE_VIDEO);
   if (!frame) return;

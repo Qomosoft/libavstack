@@ -10,7 +10,7 @@
     <SurfaceView
         android:id="@+id/surface_content"
         android:layout_width="match_parent"
-        android:layout_height="350dp"/>
+        android:layout_height="250dp"/>
 
     <RelativeLayout
         android:layout_width="wrap_content"

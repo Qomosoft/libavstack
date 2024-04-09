@@ -141,7 +141,17 @@ void OpenSLESRenderer::Start() {
   SLresult result = (*audio_player_interface_)->SetPlayState(audio_player_interface_, SL_PLAYSTATE_PLAYING);
   CHECK_SL_ERROR(result);
   is_eof_ = false;
-  BufferQueueCallback(audio_player_buffer_queue_, this);
+  SLAndroidSimpleBufferQueueState state;
+  result = (*audio_player_buffer_queue_)->GetState(audio_player_buffer_queue_, &state);
+  CHECK_SL_ERROR(result);
+  if (state.count == 0) {
+    BufferQueueCallback(audio_player_buffer_queue_, this);
+  }
+}
+
+void OpenSLESRenderer::Pause() {
+  SLresult result = (*audio_player_interface_)->SetPlayState(audio_player_interface_, SL_PLAYSTATE_PAUSED);
+  CHECK_SL_ERROR(result);
 }
 
 void OpenSLESRenderer::Stop() {
@@ -187,7 +197,6 @@ void OpenSLESRenderer::BufferQueueCallback(SLAndroidSimpleBufferQueueItf buffer_
 }
 
 void OpenSLESRenderer::OnBufferQueueCallback() {
-  LOGI("enter");
   if (is_eof_) {
     LOGI("EOF\n");
     return;
@@ -199,6 +208,7 @@ void OpenSLESRenderer::OnBufferQueueCallback() {
   if (ret == AVERROR_EOF) {
     is_eof_ = true;
     LOGI("EOF\n");
+    return;
   }
 
   if (!frame) {
@@ -215,5 +225,4 @@ void OpenSLESRenderer::OnBufferQueueCallback() {
   } else {
     LOGI("end of file");
   }
-  LOGI("leave");
 }

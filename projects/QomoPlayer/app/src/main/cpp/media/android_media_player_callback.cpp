@@ -35,6 +35,7 @@ JNIEnv *AndroidMediaPlayerCallback::AttachCurrentThread() {
 
   return env;
 }
+
 void AndroidMediaPlayerCallback::DetachCurrentThread() {
   if (jvm_->DetachCurrentThread() != JNI_OK) {
     LOGE("DetachCurrentThread failed");

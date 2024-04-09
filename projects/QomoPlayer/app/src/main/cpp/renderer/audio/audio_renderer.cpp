@@ -24,8 +24,13 @@ AudioRenderer::~AudioRenderer() {
 
 void AudioRenderer::Start() {
   LOGI("enter");
+  if (is_playing_) {
+    LOGW("AudioRenderer was already resumed\n");
+    return;
+  }
   open_sl_es_renderer_->Start();
   is_stopped_ = false;
+  is_playing_ = true;
   LOGI("leave");
 }
 
@@ -35,16 +40,7 @@ void AudioRenderer::Pause() {
     return;
   }
   is_playing_ = false;
-  open_sl_es_renderer_->Stop();
-}
-
-void AudioRenderer::Resume() {
-  if (is_playing_) {
-    LOGW("AudioRenderer was already resumed\n");
-    return;
-  }
-  is_playing_ = true;
-  open_sl_es_renderer_->Start();
+  open_sl_es_renderer_->Pause();
 }
 
 void AudioRenderer::Stop() {

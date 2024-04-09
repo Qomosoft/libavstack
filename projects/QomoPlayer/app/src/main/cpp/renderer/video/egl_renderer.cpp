@@ -89,7 +89,7 @@ int EglRenderer::Stop() {
 }
 
 int EglRenderer::SetWindowSize(int width, int height) {
-  LOGI("width=%d, height=%d", width, height);
+//  LOGI("width=%d, height=%d", width, height);
   width_ = width;
   height_ = height;
 
@@ -97,9 +97,9 @@ int EglRenderer::SetWindowSize(int width, int height) {
 }
 
 void EglRenderer::DrawRgb(AVFrame *frame, int frame_width, int frame_height) {
-  LOGI("frame_width=%d, frame_height=%d", frame_width, frame_height);
+//  LOGI("frame_width=%d, frame_height=%d", frame_width, frame_height);
   PostOnRenderThread([=] {
-    LOGI("start");
+//    LOGI("start");
     if (sws_context_ == nullptr) {
       sws_context_ = sws_getContext(frame->width, frame->height,
                                     static_cast<AVPixelFormat>(frame->format),
@@ -153,7 +153,7 @@ void EglRenderer::DrawRgb(AVFrame *frame, int frame_width, int frame_height) {
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     if (egl_->SwapBuffers(egl_surface_) != 0) LOGE("SwapBuffers failed");
-    LOGI("end");
+//    LOGI("end");
   });
 }
 

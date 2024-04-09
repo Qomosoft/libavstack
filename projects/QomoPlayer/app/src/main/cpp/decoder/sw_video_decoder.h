@@ -24,6 +24,7 @@ class SWVideoDecoder : public VideoDecoder {
   int Init(const std::string &uri) override;
   int Finalize() override;
   int DecodeFrames(float duration, std::list<AVFrame *> *frames) override;
+  int Seek(float seconds) override;
 
   float GetAudioTimeUnit() const override;
   float GetVideoTimeUnit() const override;
@@ -39,6 +40,7 @@ class SWVideoDecoder : public VideoDecoder {
                   std::list<AVFrame *> *frames,
                   AVFrame *frame,
                   float *decoded_duration);
+  void SeekToPosition(float seconds);
 
  private:
   AVFormatContext *fmt_ctx_;

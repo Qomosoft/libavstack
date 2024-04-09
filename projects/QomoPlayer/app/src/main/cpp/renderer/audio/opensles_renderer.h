@@ -24,6 +24,7 @@ class OpenSLESRenderer {
            FrameCallback *callback);
   void Finalize();
   void Start();
+  void Pause();
   void Stop();
   void Destroy();
 

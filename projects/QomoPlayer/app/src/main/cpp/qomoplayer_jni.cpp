@@ -122,6 +122,16 @@ Java_com_qomo_qomoplayer_media_QomoPlayer_native_1stop(JNIEnv *env, jobject thiz
 }
 
 JNIEXPORT void JNICALL
+Java_com_qomo_qomoplayer_media_QomoPlayer_native_1seekTo(JNIEnv *env,
+                                                         jobject thiz,
+                                                         jlong native_handle,
+                                                         jfloat seconds) {
+  MediaPlayer *engine = reinterpret_cast<MediaPlayer *>(native_handle);
+  CHECK(!engine, "engine is null");
+  engine->Seek(seconds);
+}
+
+JNIEXPORT void JNICALL
 Java_com_qomo_qomoplayer_media_QomoPlayer_native_1setCallback(JNIEnv *env,
                                                               jobject thiz,
                                                               jlong native_handle) {

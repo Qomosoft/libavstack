@@ -20,6 +20,7 @@ class AVSynchronizer : public FrameCallback {
   void Finalize();
   void Start();
   void Stop();
+  int Seek(float seconds);
 
   int OnFrameNeeded(AVFrame **frame, AVMediaType type) override;
 
@@ -37,6 +38,7 @@ class AVSynchronizer : public FrameCallback {
   bool is_on_decoding_;
   bool is_first_frame_ = true;
   bool is_eof_ = false;
+  bool is_seeking_ = false;
   std::mutex mutex_;
   std::condition_variable cv_;
 
@@ -49,4 +51,5 @@ class AVSynchronizer : public FrameCallback {
   float buffered_duration_;
   float current_playback_position_ = 0;
   float current_audio_frame_duration_ = 0;
+  float seek_position_ = 0;
 };
