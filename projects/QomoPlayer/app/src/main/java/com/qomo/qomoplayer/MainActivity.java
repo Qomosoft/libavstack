@@ -2,15 +2,16 @@ package com.qomo.qomoplayer;
 
 import static com.qomo.qomoplayer.Constants.VIDEO_NAME;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.qomo.qomoplayer.databinding.ActivityMainBinding;
 import com.qomo.qomoplayer.media.OnCompletionListener;
@@ -19,10 +20,11 @@ import com.qomo.qomoplayer.utils.AssetUtils;
 
 import java.io.File;
 
-public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback, OnCompletionListener {
+public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback, View.OnClickListener, OnCompletionListener {
     private static final String TAG = "MainActivity";
     private SurfaceView surfaceView;
     private Button playButton;
+    private Button pauseButton;
     private String videoPath;
     // Used to load the 'qomoplayer' library on application startup.
     static {
@@ -37,22 +39,13 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         initViews();
         prepareVideo();
 
         player.setDataSource(videoPath);
         player.setOnCompletionListener(this);
         player.prepare();
-
-        // Example of a call to a native method
-//        TextView tv = binding.sampleText;
-////        tv.setText(stringFromJNI());
-//        tv.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                player.start();
-//            }
-//        });
     }
 
     @Override
@@ -67,7 +60,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         holder.addCallback(this);
 
         playButton = findViewById(R.id.btn_play);
-        playButton.setOnClickListener(v -> player.start());
+        playButton.setOnClickListener(this);
+
+        pauseButton = findViewById(R.id.btn_pause);
+        pauseButton.setOnClickListener(this);
     }
 
     private void prepareVideo() {
@@ -95,5 +91,19 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void onCompletion() {
         Log.e(TAG, "onCompletion");
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn_play:
+                player.start();
+                break;
+            case R.id.btn_pause:
+                player.pause();
+                break;
+            default:
+                break;
+        }
     }
 }
