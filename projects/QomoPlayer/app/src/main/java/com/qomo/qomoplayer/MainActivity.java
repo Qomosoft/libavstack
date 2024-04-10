@@ -3,6 +3,7 @@ package com.qomo.qomoplayer;
 import static com.qomo.qomoplayer.Constants.VIDEO_NAME;
 
 import android.os.Bundle;
+import android.os.Process;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -49,9 +50,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     @Override
-    public void onBackPressed() {
-        super.onBackPressed();
+    protected void onDestroy() {
+        super.onDestroy();
         player.stop();
+        android.os.Process.killProcess(Process.myPid());
     }
 
     private void initViews() {
@@ -76,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         player.setSurface(holder.getSurface());
+        player.start();
     }
 
     @Override
@@ -91,8 +94,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void onCompletion() {
         Log.e(TAG, "onCompletion");
-        player.pause();
-        player.seekTo(0);
+//        player.pause();
+//        player.seekTo(0);
+        finish();
     }
 
     @Override
