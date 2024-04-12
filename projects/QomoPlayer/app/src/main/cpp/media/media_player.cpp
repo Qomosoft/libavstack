@@ -4,6 +4,7 @@
 
 #include "media_player.h"
 #include "logging.h"
+#include "media_player_stats.h"
 
 MediaPlayer::~MediaPlayer() {
   Finalize();
@@ -34,6 +35,7 @@ void MediaPlayer::SetDataSource(const std::string &path) {
 
 void MediaPlayer::Prepare() {
   LOGI("enter");
+  Stats::on_prepared_start_time_pt = Stats::Now();
   synchronizer_ = std::make_shared<AVSynchronizer>();
   synchronizer_->Init(path_, decoder_type_);
   int channels = synchronizer_->channels();
@@ -45,6 +47,7 @@ void MediaPlayer::Prepare() {
   video_renderer_->Init();
   video_renderer_->Start();
   synchronizer_->Start();
+  Stats::on_prepared_end_time_pt = Stats::Now();
 }
 
 void MediaPlayer::PrepareAsync() {
@@ -65,6 +68,7 @@ void MediaPlayer::Start() {
 
 void MediaPlayer::Stop() {
   LOGI("enter");
+  LOGI("media player stats:%s", Stats::ToString().c_str());
   if (is_stopped_) {
     LOGW("already stopped\n");
     return;

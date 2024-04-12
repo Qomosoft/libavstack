@@ -1,7 +1,10 @@
 #pragma once
 
+#include "media_player_stats.h"
+
 #include <cstdarg>
 #include <cstdio>
+#include <mutex>
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -23,3 +26,7 @@ void ff_log_callback(void *avcl, int level, const char *fmt, va_list vl);
     LOGE("%s", msg);      \
     return;               \
   }
+
+#define TIME_EVENT(event) \
+  static std::once_flag flag; \
+  std::call_once(flag, [] { event = Stats::Now(); });

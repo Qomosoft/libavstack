@@ -19,6 +19,7 @@ SWVideoDecoder::SWVideoDecoder()
       {}
 
 SWVideoDecoder::~SWVideoDecoder() {}
+
 int SWVideoDecoder::Init(const std::string &uri) {
   std::stringstream ss;
   ss << "\nlibavcodec:" << AV_STRINGIFY(LIBAVCODEC_VERSION) <<
@@ -103,8 +104,10 @@ int SWVideoDecoder::DecodeFrames(float duration, std::list<AVFrame *> *frames) {
     }
 
     if (packet_->stream_index == audio_stream_index_) {
+      TIME_EVENT(Stats::recv_first_audio_pkt_time_pt);
       dec = audio_dec_ctx_;
     } else if (packet_->stream_index == video_stream_index_) {
+      TIME_EVENT(Stats::recv_first_video_pkt_time_pt);
       dec = video_dec_ctx_;
     }
 
@@ -187,6 +190,7 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
     }
 
     if (dec->codec->type == AVMEDIA_TYPE_AUDIO) {
+      TIME_EVENT(Stats::first_audio_decoded_time_pt);
       float time_unit = av_q2d(fmt_ctx_->streams[audio_stream_index_]->time_base);
       float duration_time = frame->pkt_duration * time_unit;
       *decoded_duration += duration_time;
@@ -197,6 +201,7 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
 //           frame_->pkt_pos, frame_->pkt_duration, duration_time,
 //           frame->pts, pts_time, frame->pkt_dts, dts_time);
     } else {
+      TIME_EVENT(Stats::first_video_decoded_time_pt);
       float time_unit = av_q2d(fmt_ctx_->streams[video_stream_index_]->time_base);
       float duration_time = frame->pkt_duration * time_unit;
       float pts_time = frame->pts * time_unit;

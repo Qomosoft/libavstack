@@ -11,6 +11,7 @@ extern "C" {
 #include "logging.h"
 #include "media_player.h"
 #include "android_media_player_callback.h"
+#include "media_player_stats.h"
 
 #include <jni.h>
 #include <string>
@@ -25,6 +26,7 @@ extern "C" {
 JNIEXPORT jlong JNICALL
 Java_com_qomo_qomoplayer_media_QomoPlayer_native_1init(JNIEnv *env, jclass clazz, jint decoder_type) {
   //TODO: create native player engine
+  Stats::on_init_time_pt = Stats::Now();
   MediaPlayer *engine = new MediaPlayer();
   engine->Init(decoder_type);
   return reinterpret_cast<jlong>(engine);

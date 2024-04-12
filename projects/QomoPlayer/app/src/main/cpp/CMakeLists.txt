@@ -36,11 +36,17 @@ set(RENDERER_SOURCE_FILES
 ## Logging
 set(LOG_SOURCE_FILES utils/logging.cpp)
 
+## Stats
+set(STATS_SOURCE_FILES
+        stats/media_player_stats.cpp
+        stats/block_profiler.cpp)
+
 include_directories(utils
         media
         synchronizer
         decoder
         renderer
+        stats
         )
 
 add_definitions("-D__STDC_CONSTANT_MACROS")
@@ -52,6 +58,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ${VIDEO_DECODER_SOURCE_FILES}
         ${RENDERER_SOURCE_FILES}
         ${LOG_SOURCE_FILES}
+        ${STATS_SOURCE_FILES}
         qomoplayer_jni.cpp
         )
 

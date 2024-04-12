@@ -8,6 +8,7 @@ extern "C" {
 
 #include "egl_renderer.h"
 #include "logging.h"
+#include "block_profiler.h"
 
 static const AVPixelFormat kOutPixFmt = AV_PIX_FMT_RGBA;
 
@@ -99,6 +100,7 @@ int EglRenderer::SetWindowSize(int width, int height) {
 void EglRenderer::DrawRgb(uint8_t *frame, int frame_width, int frame_height) {
 //  LOGI("frame_width=%d, frame_height=%d", frame_width, frame_height);
   PostOnRenderThread([=] {
+//    BlockProfiler profiler("DrawRgb");
 //    LOGI("start");
     SetWindowSize(frame_width, frame_height);
 
@@ -129,6 +131,7 @@ void EglRenderer::DrawRgb(uint8_t *frame, int frame_width, int frame_height) {
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     if (egl_->SwapBuffers(egl_surface_) != 0) LOGE("SwapBuffers failed");
+    TIME_EVENT(Stats::first_video_frame_rendered_time_pt);
 //    LOGI("end");
   });
 }
