@@ -218,7 +218,7 @@ void OpenSLESRenderer::OnBufferQueueCallback() {
 
   uint8_t *data = pcm_data_.data();
   int out_nb_samples = swr_convert(swr_context_, &data, frame->nb_samples, (const uint8_t**) frame->data, frame->nb_samples);
-  av_frame_unref(frame);
+  av_frame_free(&frame);
   if (out_nb_samples > 0) {
     SLresult result = (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, data, pcm_data_size);
     CHECK_SL_ERROR(result);

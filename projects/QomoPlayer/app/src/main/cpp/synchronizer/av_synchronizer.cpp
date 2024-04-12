@@ -179,7 +179,7 @@ int AVSynchronizer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
       } else if (delta > sync_max_time_diff_) {
 //        LOGI("video slower than current play position, diff=%f", delta);
         buffer_queue->pop();
-        av_frame_unref(buffered_frame);
+        av_frame_free(&buffered_frame);
         continue;
       } else {
 //        LOGI("diff=%f", delta);

@@ -36,7 +36,7 @@ class SWVideoDecoder : public VideoDecoder {
  private:
   int OpenCodecContext(int *stream_idx, AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, AVMediaType type);
   int DecodeFrame(AVCodecContext *dec,
-                  const AVPacket *pkt,
+                  AVPacket *pkt,
                   std::list<AVFrame *> *frames,
                   AVFrame *frame,
                   float *decoded_duration);

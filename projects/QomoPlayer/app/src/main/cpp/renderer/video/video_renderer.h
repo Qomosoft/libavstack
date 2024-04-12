@@ -25,4 +25,6 @@ class VideoRenderer {
  private:
   FrameCallback *callback_;
   std::unique_ptr<EglRenderer> egl_renderer_;
+  SwsContext *sws_context_ = nullptr;
+  std::vector<uint8_t> rgb_data_;
 };

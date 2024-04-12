@@ -35,7 +35,7 @@ class EglRenderer {
 
   int SetWindowSize(int width, int height);
 
-  void DrawRgb(AVFrame *frame, int frame_width, int frame_height);
+  void DrawRgb(uint8_t *frame, int frame_width, int frame_height);
 
  private:
 
