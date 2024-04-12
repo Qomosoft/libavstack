@@ -73,6 +73,8 @@ int SWVideoDecoder::Init(const std::string &uri) {
 }
 
 int SWVideoDecoder::Finalize() {
+  av_packet_free(&packet_);
+  av_frame_free(&frame_);
   avcodec_free_context(&audio_dec_ctx_);
   avcodec_free_context(&video_dec_ctx_);
   avformat_close_input(&fmt_ctx_);
@@ -107,6 +109,7 @@ int SWVideoDecoder::DecodeFrames(float duration, std::list<AVFrame *> *frames) {
     }
 
     ret = DecodeFrame(dec, packet_, frames, frame_, &decoded_duration);
+    av_packet_unref(packet_);
   }
 
 
@@ -161,7 +164,7 @@ int SWVideoDecoder::OpenCodecContext(int *stream_idx,
 }
 
 int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
-                                const AVPacket *pkt,
+                                AVPacket *pkt,
                                 std::list<AVFrame *> *frames,
                                 AVFrame *frame,
                                 float *decoded_duration) {
@@ -172,8 +175,10 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
   }
 
   while (true) {
-    ret = avcodec_receive_frame(dec, frame);
+    ret = avcodec_receive_frame(dec, frame_);
     if (ret < 0) {
+      av_frame_unref(frame_);
+//      av_packet_unref(pkt);
       if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN)) {
         return 0;
       }
@@ -203,9 +208,9 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
 //           frame->pts, pts_time, frame->pkt_dts, dts_time);
     }
 
-    frames->emplace_back(av_frame_clone(frame));
-    av_frame_unref(frame);
-    av_packet_unref(packet_);
+    frames->emplace_back(av_frame_clone(frame_));
+    av_frame_unref(frame_);
+//    av_packet_unref(pkt);
   }
 
   return ret;
