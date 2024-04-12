@@ -8,12 +8,11 @@
 #include "logging.h"
 
 AudioRenderer::AudioRenderer(int channels, int sample_rate, int sample_fmt, FrameCallback *callback)
-    :
-                             is_playing_(false),
-                             is_stopped_(true),
-                             channels_(channels),
-                             sample_rate_(sample_rate),
-                             callback_(callback) {
+    : is_playing_(false),
+      is_stopped_(true),
+      channels_(channels),
+      sample_rate_(sample_rate),
+      callback_(callback) {
   open_sl_es_renderer_ = std::make_unique<OpenSLESRenderer>();
   open_sl_es_renderer_->Init(sample_rate, channels, sample_fmt, 2, callback);
 }
