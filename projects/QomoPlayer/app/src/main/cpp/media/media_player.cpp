@@ -94,7 +94,7 @@ void MediaPlayer::Seek(float seconds) {
   synchronizer_->Seek(seconds);
 }
 
-int MediaPlayer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
+int MediaPlayer::OnFrameNeeded(Frame **frame, AVMediaType type) {
   int ret;
   if (type == AVMEDIA_TYPE_AUDIO) {
     ret = synchronizer_->OnFrameNeeded(frame, type);

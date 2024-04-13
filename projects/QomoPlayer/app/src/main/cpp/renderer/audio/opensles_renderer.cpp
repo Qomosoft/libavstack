@@ -38,18 +38,18 @@ int OpenSLESRenderer::Init(int sample_rate,
   channels_ = channels;
 //  pcm_data_ = std::vector<uint8_t>(sample_rate * buffer_size * channels);
   CreateEngine();
-  swr_context_ = swr_alloc_set_opts(nullptr, av_get_default_channel_layout(kOutChannels),
-                                    kOutSampleFmt,
-                                    kOutSampleRate,
-                                    av_get_default_channel_layout(channels),
-                                    static_cast<AVSampleFormat>(sample_fmt),
-                                    sample_rate,
-                                    0, nullptr);
-  swr_init(swr_context_);
-  int input_nb_samples = av_rescale_rnd(kMaxInputSamples, kOutSampleRate, sample_rate, AV_ROUND_UP);
-  int out_data_size = av_samples_get_buffer_size(nullptr, kOutChannels, input_nb_samples,
-                                                 (AVSampleFormat) kOutSampleFmt, 1);
-  pcm_data_ = std::vector<uint8_t>(out_data_size);
+//  swr_context_ = swr_alloc_set_opts(nullptr, av_get_default_channel_layout(kOutChannels),
+//                                    kOutSampleFmt,
+//                                    kOutSampleRate,
+//                                    av_get_default_channel_layout(channels),
+//                                    static_cast<AVSampleFormat>(sample_fmt),
+//                                    sample_rate,
+//                                    0, nullptr);
+//  swr_init(swr_context_);
+//  int input_nb_samples = av_rescale_rnd(kMaxInputSamples, kOutSampleRate, sample_rate, AV_ROUND_UP);
+//  int out_data_size = av_samples_get_buffer_size(nullptr, kOutChannels, input_nb_samples,
+//                                                 (AVSampleFormat) kOutSampleFmt, 1);
+//  pcm_data_ = std::vector<uint8_t>(out_data_size);
 
   return 0;
 }
@@ -183,7 +183,7 @@ void OpenSLESRenderer::Destroy() {
     engine_interface_ = nullptr;
   }
 
-  swr_free(&swr_context_);
+//  swr_free(&swr_context_);
 }
 
 void OpenSLESRenderer::BufferQueueCallback(SLAndroidSimpleBufferQueueItf buffer_queue_itf,
@@ -202,8 +202,9 @@ void OpenSLESRenderer::OnBufferQueueCallback() {
     return;
   }
 
-  int pcm_data_size = static_cast<int>(pcm_data_.size());
-  AVFrame *frame = nullptr;
+//  int pcm_data_size = static_cast<int>(pcm_data_.size());
+//  AVFrame *frame = nullptr;
+  Frame *frame = nullptr;
   int ret = callback_->OnFrameNeeded(&frame, AVMEDIA_TYPE_AUDIO);
   if (ret == AVERROR_EOF) {
     is_eof_ = true;
@@ -216,14 +217,21 @@ void OpenSLESRenderer::OnBufferQueueCallback() {
     return;
   }
 
-  uint8_t *data = pcm_data_.data();
-  int out_nb_samples = swr_convert(swr_context_, &data, frame->nb_samples, (const uint8_t**) frame->data, frame->nb_samples);
-  av_frame_free(&frame);
-  if (out_nb_samples > 0) {
-    TIME_EVENT(Stats::first_audio_frame_rendered_time_pt);
-    SLresult result = (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, data, pcm_data_size);
-    CHECK_SL_ERROR(result);
-  } else {
-    LOGI("end of file");
-  }
+//  uint8_t *data = pcm_data_.data();
+//  int out_nb_samples = swr_convert(swr_context_, &data, frame->nb_samples, (const uint8_t**) frame->data, frame->nb_samples);
+//  av_frame_free(&frame);
+//  if (out_nb_samples > 0) {
+//    TIME_EVENT(Stats::first_audio_frame_rendered_time_pt);
+//    SLresult result = (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, data, pcm_data_size);
+//    CHECK_SL_ERROR(result);
+//  } else {
+//    LOGI("end of file");
+//  }
+
+  TIME_EVENT(Stats::first_audio_frame_rendered_time_pt);
+//  LOGI("play audio frame:%s", frame->ToString().c_str());
+  SLresult result = (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, frame->GetData(), frame->GetSize());
+  delete frame;
+  frame = nullptr;
+  CHECK_SL_ERROR(result);
 }

@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include "frame.h"
 extern "C" {
 #include "libavutil/frame.h"
 }
 
 class FrameCallback {
  public:
-  virtual int OnFrameNeeded(AVFrame **frame, AVMediaType type) = 0;
+  virtual int OnFrameNeeded(Frame **frame, AVMediaType type) = 0;
 };

@@ -3,10 +3,23 @@
 //
 #define LOG_TAG "SWVideoDecoder"
 
+extern "C" {
+#include "libavutil/imgutils.h"
+}
+
 #include "sw_video_decoder.h"
 #include "logging.h"
+#include "block_profiler.h"
 
 #include <sstream>
+
+static const AVPixelFormat kOutPixFmt = AV_PIX_FMT_RGBA;
+
+static const int kOutSampleRate = 44100;
+static const int kOutChannels = 2;
+static const AVSampleFormat kOutSampleFmt = AV_SAMPLE_FMT_S16;
+static const int kMaxInputSamples = 1024;
+
 
 SWVideoDecoder::SWVideoDecoder()
     : fmt_ctx_(nullptr),
@@ -69,6 +82,28 @@ int SWVideoDecoder::Init(const std::string &uri) {
   if (!packet_) {
     LOGE("alloc packet failed\n");
   }
+
+//  if (swr_context_ == nullptr) {
+    swr_context_ = swr_alloc_set_opts(nullptr, av_get_default_channel_layout(kOutChannels),
+                                      kOutSampleFmt,
+                                      kOutSampleRate,
+                                      av_get_default_channel_layout(channels_),
+                                      static_cast<AVSampleFormat>(sample_fmt_),
+                                      sample_rate_,
+                                      0, nullptr);
+    swr_init(swr_context_);
+//  }
+
+//  if (sws_context_ == nullptr) {
+    sws_context_ = sws_getContext(video_dec_ctx_->width, video_dec_ctx_->height,
+                                  video_dec_ctx_->pix_fmt,
+                                  video_dec_ctx_->width, video_dec_ctx_->height, kOutPixFmt,
+                                  SWS_BILINEAR, nullptr, nullptr, nullptr);
+    if (!sws_context_) {
+      LOGE("sws_getContext failed\n");
+      return -1;
+    }
+//  }
 
   return 0;
 }
@@ -217,6 +252,153 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
   }
 
   return ret;
+}
+
+int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
+                                AVPacket *pkt,
+                                std::queue<Frame *> *frame_q,
+                                AVFrame *frame,
+                                float *decoded_duration) {
+  int ret = avcodec_send_packet(dec, pkt);
+  if (ret < 0) {
+    LOGE("avcodec_send_packet failed %s", av_err2str(ret));
+    return ret;
+  }
+
+  while (true) {
+    ret = avcodec_receive_frame(dec, frame_);
+    if (ret < 0) {
+      av_frame_unref(frame_);
+      if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN)) {
+        return 0;
+      }
+
+      LOGE("avcodec_receive_frame failed %s", av_err2str(ret));
+      return ret;
+    }
+
+    Frame *dst_frame = new Frame();
+    if (dec->codec->type == AVMEDIA_TYPE_AUDIO) {
+      TIME_EVENT(Stats::first_audio_decoded_time_pt);
+      float time_unit = av_q2d(fmt_ctx_->streams[audio_stream_index_]->time_base);
+      float duration_time = frame->pkt_duration * time_unit;
+      *decoded_duration += duration_time;
+      ProcessAudioFrame(frame, time_unit, dst_frame);
+      float pts_time = frame->pts * time_unit;
+      float dts_time = frame->pkt_dts * time_unit;
+//      LOGI("receive %s frame pkt_pos=%d, pkt_duration=%d, duration_time=%f, pts=%d, pts_time=%f, "
+//           "dts=%d, dts_time=%f", av_get_media_type_string(dec->codec->type),
+//           frame_->pkt_pos, frame_->pkt_duration, duration_time,
+//           frame->pts, pts_time, frame->pkt_dts, dts_time);
+    } else {
+      TIME_EVENT(Stats::first_video_decoded_time_pt);
+      float time_unit = av_q2d(fmt_ctx_->streams[video_stream_index_]->time_base);
+      float duration_time = frame->pkt_duration * time_unit;
+      ProcessVideoFrame(frame, time_unit, dst_frame);
+      float pts_time = frame->pts * time_unit;
+      float dts_time = frame->pkt_dts * time_unit;
+//      LOGI("receive %s frame pkt_pos=%d, pkt_duration=%d, duration_time=%f, pts=%d, pts_time=%f, "
+//           "dts=%d, dts_time=%f", av_get_media_type_string(dec->codec->type),
+//           frame_->pkt_pos, frame_->pkt_duration, duration_time,
+//           frame->pts, pts_time, frame->pkt_dts, dts_time);
+    }
+
+    if (dec->codec->type == AVMEDIA_TYPE_AUDIO) {
+//      LOGI("recv audio frame: %s", dst_frame->ToString().c_str());
+    } else {
+//      LOGI("recv video frame: %s", dst_frame->ToString().c_str());
+    }
+    frame_q->emplace(dst_frame);
+//    frames->emplace_back(av_frame_clone(frame_));
+    av_frame_unref(frame_);
+  }
+
+  return ret;
+}
+
+int SWVideoDecoder::DecodeFrames(float duration,
+                                 float *decoded_duration,
+                                 std::queue<Frame *> *audio_q,
+                                 std::queue<Frame *> *video_q) {
+  int ret = 0;
+//  float decoded_duration = 0.0f;
+  AVCodecContext *dec = nullptr;
+  std::queue<Frame *> *queue = nullptr;
+  bool is_eof = false;
+  while (*decoded_duration <= duration) {
+    ret = av_read_frame(fmt_ctx_, packet_);
+    if (ret < 0) {
+      if (ret == AVERROR_EOF) {
+        LOGI("av_read_frame return %s", av_err2str(ret));
+        is_eof = true;
+//        DecodeFrame(audio_dec_ctx_, nullptr, frames, frame_, &decoded_duration);
+//        DecodeFrame(video_dec_ctx_, nullptr, frames, frame_, &decoded_duration);
+        DecodeFrame(audio_dec_ctx_, nullptr, audio_q, frame_, decoded_duration);
+        DecodeFrame(video_dec_ctx_, nullptr, video_q, frame_, decoded_duration);
+        break;
+      } else {
+        LOGE("av_read_frame return %s\n", av_err2str(ret));
+        break;
+      }
+    }
+
+    if (packet_->stream_index == audio_stream_index_) {
+      TIME_EVENT(Stats::recv_first_audio_pkt_time_pt);
+      dec = audio_dec_ctx_;
+      queue = audio_q;
+    } else if (packet_->stream_index == video_stream_index_) {
+      TIME_EVENT(Stats::recv_first_video_pkt_time_pt);
+      dec = video_dec_ctx_;
+      queue = video_q;
+    }
+
+    ret = DecodeFrame(dec, packet_, queue, frame_, decoded_duration);
+    av_packet_unref(packet_);
+  }
+
+
+  return is_eof ? AVERROR_EOF : ret;
+}
+
+void SWVideoDecoder::ProcessVideoFrame(AVFrame *src, float time_unit, Frame *dst) {
+//  BlockProfiler profiler("ProcessVideoFrame");
+  int ret;
+  int rgb_data_size = av_image_get_buffer_size(kOutPixFmt, src->width, src->height, 1);
+  uint8_t *rgb_data = new uint8_t[rgb_data_size];
+  AVFrame *rgb_frame = av_frame_alloc();
+  av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, rgb_data,
+                       kOutPixFmt, src->width, src->height, 1);
+  ret = sws_scale(sws_context_,
+                  src->data,
+                  src->linesize,
+                  0,
+                  src->height,
+                  rgb_frame->data,
+                  rgb_frame->linesize);
+  dst->SetMediaType(kMediaTypeVideo);
+  dst->SetData(rgb_data);
+  dst->SetSize(rgb_data_size);
+  dst->SetDuration(src->pkt_duration * time_unit);
+  dst->SetPts(src->pts * time_unit);
+  dst->SetWidth(src->width);
+  dst->SetHeight(src->height);
+  if (ret < 0) {
+    LOGE("sws_scale failed %s", av_err2str(ret));
+  }
+}
+
+void SWVideoDecoder::ProcessAudioFrame(AVFrame *src, float time_unit, Frame *dst) {
+//  BlockProfiler profiler("ProcessAudioFrame");
+  int input_nb_samples = av_rescale_rnd(kMaxInputSamples, kOutSampleRate, sample_rate_, AV_ROUND_UP);
+  int out_data_size = av_samples_get_buffer_size(nullptr, kOutChannels, input_nb_samples,
+                                                 (AVSampleFormat) kOutSampleFmt, 1);
+  uint8_t *data = new uint8_t[out_data_size];
+  int out_nb_samples = swr_convert(swr_context_, &data, src->nb_samples, (const uint8_t**) src->data, src->nb_samples);
+  dst->SetMediaType(kMediaTypeAudio);
+  dst->SetData(data);
+  dst->SetSize(out_data_size);
+  dst->SetDuration(src->pkt_duration * time_unit);
+  dst->SetPts(src->pts * time_unit);
 }
 
 void SWVideoDecoder::SeekToPosition(float seconds) {

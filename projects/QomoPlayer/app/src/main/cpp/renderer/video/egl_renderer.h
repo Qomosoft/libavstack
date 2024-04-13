@@ -7,6 +7,7 @@ extern "C" {
 #include "qomo_egl.h"
 #include "shader.h"
 #include "libavutil/frame.h"
+#include "frame.h"
 //#include "rgb_generator.h"
 
 #include <GLES2/gl2.h>
@@ -35,7 +36,7 @@ class EglRenderer {
 
   int SetWindowSize(int width, int height);
 
-  void DrawRgb(uint8_t *frame, int frame_width, int frame_height);
+  void DrawRgb(Frame *frame, int frame_width, int frame_height);
 
  private:
 

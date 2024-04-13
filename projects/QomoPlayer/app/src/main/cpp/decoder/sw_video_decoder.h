@@ -24,6 +24,10 @@ class SWVideoDecoder : public VideoDecoder {
   int Init(const std::string &uri) override;
   int Finalize() override;
   int DecodeFrames(float duration, std::list<AVFrame *> *frames) override;
+  int DecodeFrames(float duration,
+                   float *decoded_duration,
+                   std::queue<Frame *> *audio_q,
+                   std::queue<Frame *> *video_q) override;
   int Seek(float seconds) override;
 
   float GetAudioTimeUnit() const override;
@@ -40,6 +44,15 @@ class SWVideoDecoder : public VideoDecoder {
                   std::list<AVFrame *> *frames,
                   AVFrame *frame,
                   float *decoded_duration);
+
+  int DecodeFrame(AVCodecContext *dec,
+                  AVPacket *pkt,
+                  std::queue<Frame *> *frame_q,
+                  AVFrame *frame,
+                  float *decoded_duration);
+  void ProcessVideoFrame(AVFrame *src, float time_unit, Frame *dst);
+  void ProcessAudioFrame(AVFrame *src, float time_unit, Frame *dst);
+
   void SeekToPosition(float seconds);
 
  private:
@@ -53,4 +66,10 @@ class SWVideoDecoder : public VideoDecoder {
   int channels_;
   int sample_rate_;
   int sample_fmt_;
+
+  SwsContext *sws_context_ = nullptr;
+//  std::vector<uint8_t> rgb_data_;
+
+  SwrContext *swr_context_ = nullptr;
+//  std::vector<uint8_t> pcm_data_;
 };

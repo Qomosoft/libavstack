@@ -4,6 +4,7 @@
 #pragma once
 #include "video_decoder.h"
 #include "frame_callback.h"
+#include "frame.h"
 
 #include <string>
 #include <memory>
@@ -22,7 +23,7 @@ class AVSynchronizer : public FrameCallback {
   void Stop();
   int Seek(float seconds);
 
-  int OnFrameNeeded(AVFrame **frame, AVMediaType type) override;
+  int OnFrameNeeded(Frame **frame, AVMediaType type) override;
 
   int channels() const;
   int sample_rate() const;
@@ -42,8 +43,10 @@ class AVSynchronizer : public FrameCallback {
   std::mutex mutex_;
   std::condition_variable cv_;
 
-  std::shared_ptr<std::queue<AVFrame *>> audio_frame_buffer_;
-  std::shared_ptr<std::queue<AVFrame *>> video_frame_buffer_;
+//  std::shared_ptr<std::queue<AVFrame *>> audio_frame_buffer_;
+//  std::shared_ptr<std::queue<AVFrame *>> video_frame_buffer_;
+  std::shared_ptr<std::queue<Frame *>> audio_frame_buffers_;
+  std::shared_ptr<std::queue<Frame *>> video_frame_buffers_;
 
   float min_buffered_duration_;
   float max_buffered_duration_;

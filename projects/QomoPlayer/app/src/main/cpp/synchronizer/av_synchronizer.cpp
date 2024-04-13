@@ -39,8 +39,11 @@ bool AVSynchronizer::Init(const std::string &url, int decode_type) {
     return false;
   }
 
-  audio_frame_buffer_ = std::make_shared<std::queue<AVFrame *>>();
-  video_frame_buffer_ = std::make_shared<std::queue<AVFrame *>>();
+//  audio_frame_buffer_ = std::make_shared<std::queue<AVFrame *>>();
+//  video_frame_buffer_ = std::make_shared<std::queue<AVFrame *>>();
+
+  audio_frame_buffers_ = std::make_shared<std::queue<Frame *>>();
+  video_frame_buffers_ = std::make_shared<std::queue<Frame *>>();
 
   decoder_->Init(url);
 
@@ -76,16 +79,19 @@ int AVSynchronizer::DecodeFrames() {
   float duration = 0.1f;
   int ret;
   if (is_seeking_) {
-    while (!audio_frame_buffer_->empty()) {
-      AVFrame *frame = audio_frame_buffer_->front();
-      av_frame_unref(frame);
-      audio_frame_buffer_->pop();
-    }
-    while (!video_frame_buffer_->empty()) {
-      AVFrame *frame = video_frame_buffer_->front();
-      av_frame_unref(frame);
-      video_frame_buffer_->pop();
-    }
+//    while (!audio_frame_buffer_->empty()) {
+//      AVFrame *frame = audio_frame_buffer_->front();
+//      av_frame_unref(frame);
+//      audio_frame_buffer_->pop();
+//    }
+//    while (!video_frame_buffer_->empty()) {
+//      AVFrame *frame = video_frame_buffer_->front();
+//      av_frame_unref(frame);
+//      video_frame_buffer_->pop();
+//    }
+
+    while (!audio_frame_buffers_->empty()) audio_frame_buffers_->pop();
+    while (!video_frame_buffers_->empty()) video_frame_buffers_->pop();
 
     decoder_->Seek(seek_position_);
     buffered_duration_ = 0;
@@ -93,22 +99,25 @@ int AVSynchronizer::DecodeFrames() {
   }
 
   while (buffered_duration_ < max_buffered_duration_) {
-    std::list<AVFrame *> frames;
-    ret = decoder_->DecodeFrames(duration, &frames);
+//    std::list<AVFrame *> frames;
+//    ret = decoder_->DecodeFrames(duration, &frames);
+    float decoded_duration = 0;
+    ret = decoder_->DecodeFrames(duration, &decoded_duration, audio_frame_buffers_.get(), video_frame_buffers_.get());
     if (ret != 0) {
       LOGE("DecodeFrames failed %s\n", av_err2str(ret));
       break;
     }
 
-    for (auto frame : frames) {
-      if (frame->pict_type == AV_PICTURE_TYPE_NONE) {
-        float time_unit = decoder_->GetAudioTimeUnit();
-        buffered_duration_ += frame->pkt_duration * time_unit;
-        audio_frame_buffer_->emplace(frame);
-      } else {
-        video_frame_buffer_->emplace(frame);
-      }
-    }
+    buffered_duration_ += decoded_duration;
+//    for (auto frame : frames) {
+//      if (frame->pict_type == AV_PICTURE_TYPE_NONE) {
+//        float time_unit = decoder_->GetAudioTimeUnit();
+//        buffered_duration_ += frame->pkt_duration * time_unit;
+//        audio_frame_buffer_->emplace(frame);
+//      } else {
+//        video_frame_buffer_->emplace(frame);
+//      }
+//    }
   }
 
   return ret;
@@ -133,16 +142,19 @@ void AVSynchronizer::DecoderLoop() {
   }
 }
 
-int AVSynchronizer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
+int AVSynchronizer::OnFrameNeeded(Frame **frame, AVMediaType type) {
   std::unique_lock<std::mutex> lock(mutex_);
   if (is_eof_) return AVERROR_EOF;
 
-  std::shared_ptr<std::queue<AVFrame *>> buffer_queue;
+//  std::shared_ptr<std::queue<AVFrame *>> buffer_queue;
+  std::shared_ptr<std::queue<Frame *>> buffer_queue;
 
   if (type == AVMEDIA_TYPE_AUDIO) {
-    buffer_queue = audio_frame_buffer_;
+//    buffer_queue = audio_frame_buffer_;
+    buffer_queue = audio_frame_buffers_;
   } else if (type == AVMEDIA_TYPE_VIDEO) {
-    buffer_queue = video_frame_buffer_;
+//    buffer_queue = video_frame_buffer_;
+    buffer_queue = video_frame_buffers_;
   }
 
   if (buffer_queue->empty()) {
@@ -150,13 +162,16 @@ int AVSynchronizer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
     return -1;
   }
 
-  AVFrame *buffered_frame = nullptr;
+//  AVFrame *buffered_frame = nullptr;
+  Frame *buffered_frame = nullptr;
   if (type == AVMEDIA_TYPE_AUDIO) {
     buffered_frame = buffer_queue->front();
     buffer_queue->pop();
-    float time_unit = decoder_->GetAudioTimeUnit();
-    current_playback_position_ = buffered_frame->pts * time_unit;
-    current_audio_frame_duration_ = buffered_frame->pkt_duration * time_unit;
+//    float time_unit = decoder_->GetAudioTimeUnit();
+//    current_playback_position_ = buffered_frame->pts * time_unit;
+//    current_audio_frame_duration_ = buffered_frame->pkt_duration * time_unit;
+    current_playback_position_ = buffered_frame->GetPts();
+    current_audio_frame_duration_ = buffered_frame->GetDuration();
     buffered_duration_ -= current_audio_frame_duration_;
   } else if (type == AVMEDIA_TYPE_VIDEO) {
     while (true) {
@@ -168,8 +183,9 @@ int AVSynchronizer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
       }
 
       //TODO: check if the current_audio_frame_duration_ correct
-      float time_unit = decoder_->GetVideoTimeUnit();
-      float delta = (current_playback_position_ - current_audio_frame_duration_) - buffered_frame->pts * time_unit;
+//      float time_unit = decoder_->GetVideoTimeUnit();
+//      float delta = (current_playback_position_ - current_audio_frame_duration_) - buffered_frame->pts * time_unit;
+      float delta = (current_playback_position_ - current_audio_frame_duration_) - buffered_frame->GetPts();
       //视频比音频快了好多，继续渲染上一帧
       if (delta < -sync_max_time_diff_) {
 //        LOGI("video faster than current play position, diff=%f", delta);
@@ -179,7 +195,9 @@ int AVSynchronizer::OnFrameNeeded(AVFrame **frame, AVMediaType type) {
       } else if (delta > sync_max_time_diff_) {
 //        LOGI("video slower than current play position, diff=%f", delta);
         buffer_queue->pop();
-        av_frame_free(&buffered_frame);
+//        av_frame_free(&buffered_frame);
+        delete buffered_frame;
+        buffered_frame = nullptr;
         continue;
       } else {
 //        LOGI("diff=%f", delta);

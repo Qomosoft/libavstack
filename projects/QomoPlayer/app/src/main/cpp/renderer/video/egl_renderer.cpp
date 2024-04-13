@@ -9,6 +9,7 @@ extern "C" {
 #include "egl_renderer.h"
 #include "logging.h"
 #include "block_profiler.h"
+#include "frame.h"
 
 static const AVPixelFormat kOutPixFmt = AV_PIX_FMT_RGBA;
 
@@ -97,7 +98,7 @@ int EglRenderer::SetWindowSize(int width, int height) {
   return 0;
 }
 
-void EglRenderer::DrawRgb(uint8_t *frame, int frame_width, int frame_height) {
+void EglRenderer::DrawRgb(Frame *frame, int frame_width, int frame_height) {
 //  LOGI("frame_width=%d, frame_height=%d", frame_width, frame_height);
   PostOnRenderThread([=] {
 //    BlockProfiler profiler("DrawRgb");
@@ -110,7 +111,7 @@ void EglRenderer::DrawRgb(uint8_t *frame, int frame_width, int frame_height) {
     if (CheckGlError("glBindTexture")) {
       return;
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, frame);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, frame->GetData());
     if (CheckGlError("glTexImage2D")) {
       return;
     }
@@ -129,6 +130,7 @@ void EglRenderer::DrawRgb(uint8_t *frame, int frame_width, int frame_height) {
     glVertexAttribPointer(attribute_texcoord_index_, 2, GL_FLOAT, 0, 0, tex_coords);
     glEnableVertexAttribArray(attribute_texcoord_index_);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    delete frame;
 
     if (egl_->SwapBuffers(egl_surface_) != 0) LOGE("SwapBuffers failed");
     TIME_EVENT(Stats::first_video_frame_rendered_time_pt);

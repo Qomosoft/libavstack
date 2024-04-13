@@ -45,9 +45,9 @@ class OpenSLESRenderer {
 
   SLmilliHertz sample_rate_;
   int channels_;
-  std::vector<uint8_t> pcm_data_;
+//  std::vector<uint8_t> pcm_data_;
 
   FrameCallback *callback_;
-  SwrContext *swr_context_;
+//  SwrContext *swr_context_;
   bool is_eof_ = false;
 };

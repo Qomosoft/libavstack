@@ -21,6 +21,7 @@ set(AVSYNCHRONIZER_SOURCE_FILES
 ## Decoder
 set(VIDEO_DECODER_SOURCE_FILES
         decoder/sw_video_decoder.cpp
+        decoder/frame.cpp
         )
 
 ## Renderer
