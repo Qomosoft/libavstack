@@ -30,7 +30,7 @@
   void Seek(float position);
   void SetCallback(std::shared_ptr<MediaPlayerCallback> callback);
 
-  int OnFrameNeeded(AVFrame **frame, AVMediaType type) override;
+  int OnFrameNeeded(Frame **frame, AVMediaType type) override;
 
  private:
   std::shared_ptr<AVSynchronizer> synchronizer_;

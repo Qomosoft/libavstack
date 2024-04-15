@@ -7,6 +7,7 @@ extern "C" {
 #include "qomo_egl.h"
 #include "shader.h"
 #include "libavutil/frame.h"
+#include "frame.h"
 //#include "rgb_generator.h"
 
 #include <GLES2/gl2.h>
@@ -35,7 +36,7 @@ class EglRenderer {
 
   int SetWindowSize(int width, int height);
 
-  void DrawRgb(uint8_t *frame, int frame_width, int frame_height);
+  void DrawRgb(Frame *frame, int frame_width, int frame_height);
 
  private:
 
@@ -53,7 +54,6 @@ class EglRenderer {
   std::unique_ptr<QomoEgl> egl_;
   std::unique_ptr<Shader> shader_;
   std::unique_ptr<std::thread> render_thread_;
-//  std::unique_ptr<RgbGenerator> rgb_generator_;
   std::queue<std::function<void()>> render_tasks_;
   std::condition_variable cv_;
   std::mutex queue_mutex_;
@@ -64,6 +64,4 @@ class EglRenderer {
   int attribute_texcoord_index_;
   int width_;
   int height_;
-  SwsContext *sws_context_ = nullptr;
-  std::vector<uint8_t> rgb_data_;
 };
