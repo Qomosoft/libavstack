@@ -126,7 +126,6 @@ void EglRenderer::DrawRgb(Frame *frame, int frame_width, int frame_height) {
     glVertexAttribPointer(attribute_texcoord_index_, 2, GL_FLOAT, 0, 0, tex_coords);
     glEnableVertexAttribArray(attribute_texcoord_index_);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    delete frame;
 
     if (egl_->SwapBuffers(egl_surface_) != 0) LOGE("SwapBuffers failed");
     TIME_EVENT(Stats::first_video_frame_rendered_time_pt);

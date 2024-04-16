@@ -202,7 +202,5 @@ void OpenSLESRenderer::OnBufferQueueCallback() {
 
   TIME_EVENT(Stats::first_audio_frame_rendered_time_pt);
   SLresult result = (*audio_player_buffer_queue_)->Enqueue(audio_player_buffer_queue_, frame->GetData(), frame->GetSize());
-  delete frame;
-  frame = nullptr;
   CHECK_SL_ERROR(result);
 }

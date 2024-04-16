@@ -254,7 +254,7 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
 
 int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
                                 AVPacket *pkt,
-                                std::queue<Frame *> *frame_q,
+                                FrameQueuePtr frame_q,
                                 AVFrame *frame,
                                 float *decoded_duration) {
   int ret = avcodec_send_packet(dec, pkt);
@@ -275,7 +275,8 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
       return ret;
     }
 
-    Frame *dst_frame = new Frame();
+//    Frame *dst_frame = new Frame();
+    Frame *dst_frame = &(frame_q->push_back_peek());
     if (dec->codec->type == AVMEDIA_TYPE_AUDIO) {
       TIME_EVENT(Stats::first_audio_decoded_time_pt);
       float time_unit = av_q2d(fmt_ctx_->streams[audio_stream_index_]->time_base);
@@ -306,8 +307,9 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
     } else {
 //      LOGI("recv video frame: %s", dst_frame->ToString().c_str());
     }
-    frame_q->emplace(dst_frame);
+//    frame_q->emplace(dst_frame);
 //    frames->emplace_back(av_frame_clone(frame_));
+    frame_q->push_back(*dst_frame);
     av_frame_unref(frame_);
   }
 
@@ -316,12 +318,12 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
 
 int SWVideoDecoder::DecodeFrames(float duration,
                                  float *decoded_duration,
-                                 std::queue<Frame *> *audio_q,
-                                 std::queue<Frame *> *video_q) {
+                                 FrameQueuePtr audio_q,
+                                 FrameQueuePtr video_q) {
   int ret = 0;
 //  float decoded_duration = 0.0f;
   AVCodecContext *dec = nullptr;
-  std::queue<Frame *> *queue = nullptr;
+  FrameQueuePtr queue = nullptr;
   bool is_eof = false;
   while (*decoded_duration <= duration) {
     ret = av_read_frame(fmt_ctx_, packet_);
@@ -360,7 +362,11 @@ void SWVideoDecoder::ProcessVideoFrame(AVFrame *src, float time_unit, Frame *dst
 //  BlockProfiler profiler("ProcessVideoFrame");
   int ret;
   int rgb_data_size = av_image_get_buffer_size(kOutPixFmt, src->width, src->height, 1);
-  uint8_t *rgb_data = new uint8_t[rgb_data_size];
+//  uint8_t *rgb_data = new uint8_t[rgb_data_size];
+  uint8_t *rgb_data = dst->GetData();
+  if (rgb_data == nullptr) {
+    rgb_data = new uint8_t[rgb_data_size];
+  }
   AVFrame *rgb_frame = av_frame_alloc();
   av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, rgb_data,
                        kOutPixFmt, src->width, src->height, 1);
@@ -388,7 +394,10 @@ void SWVideoDecoder::ProcessAudioFrame(AVFrame *src, float time_unit, Frame *dst
   int input_nb_samples = av_rescale_rnd(kMaxInputSamples, kOutSampleRate, sample_rate_, AV_ROUND_UP);
   int out_data_size = av_samples_get_buffer_size(nullptr, kOutChannels, input_nb_samples,
                                                  (AVSampleFormat) kOutSampleFmt, 1);
-  uint8_t *data = new uint8_t[out_data_size];
+  uint8_t *data = dst->GetData();
+  if (data == nullptr) {
+    data = new uint8_t[out_data_size];
+  }
   int out_nb_samples = swr_convert(swr_context_, &data, src->nb_samples, (const uint8_t**) src->data, src->nb_samples);
   dst->SetMediaType(kMediaTypeAudio);
   dst->SetData(data);

@@ -26,8 +26,8 @@ class SWVideoDecoder : public VideoDecoder {
   int DecodeFrames(float duration, std::list<AVFrame *> *frames) override;
   int DecodeFrames(float duration,
                    float *decoded_duration,
-                   std::queue<Frame *> *audio_q,
-                   std::queue<Frame *> *video_q) override;
+                   FrameQueuePtr audio_q,
+                   FrameQueuePtr video_q) override;
   int Seek(float seconds) override;
 
   float GetAudioTimeUnit() const override;
@@ -47,7 +47,7 @@ class SWVideoDecoder : public VideoDecoder {
 
   int DecodeFrame(AVCodecContext *dec,
                   AVPacket *pkt,
-                  std::queue<Frame *> *frame_q,
+                  FrameQueuePtr frame_q,
                   AVFrame *frame,
                   float *decoded_duration);
   void ProcessVideoFrame(AVFrame *src, float time_unit, Frame *dst);

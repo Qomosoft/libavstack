@@ -5,6 +5,7 @@
 #include "video_decoder.h"
 #include "frame_callback.h"
 #include "frame.h"
+#include "circular_buffer.hpp"
 
 #include <string>
 #include <memory>
@@ -43,8 +44,8 @@ class AVSynchronizer : public FrameCallback {
   std::mutex mutex_;
   std::condition_variable cv_;
 
-  std::shared_ptr<std::queue<Frame *>> audio_frame_buffers_;
-  std::shared_ptr<std::queue<Frame *>> video_frame_buffers_;
+  FrameQueuePtr audio_frame_buffers_;
+  FrameQueuePtr video_frame_buffers_;
 
   float min_buffered_duration_;
   float max_buffered_duration_;
