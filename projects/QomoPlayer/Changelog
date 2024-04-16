@@ -1,3 +1,6 @@
 version 1.0.0
 - Support basic stats
 - Custom Media Frame allocation
+
+version 1.0.1
+- Add circular buffer to store frames
