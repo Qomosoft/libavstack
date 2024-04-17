@@ -11,8 +11,6 @@ extern "C" {
 #include "block_profiler.h"
 #include "frame.h"
 
-static const AVPixelFormat kOutPixFmt = AV_PIX_FMT_RGBA;
-
 static const char* kVertexShader =
     "#version 300 es                          \n"
     "layout(location = 0) in vec4 position;   \n"
@@ -26,12 +24,11 @@ static const char* kVertexShader =
 
 static const char* kFragmentShader =
     "#version 300 es                                        \n"
-    "precision highp float;                                 \n"
     "in vec2 v_texcoord;                                    \n"
-    "layout(location = 0) out vec4 fragColor; \n"
-    "uniform sampler2D yuvTexSampler;                       \n"
+    "out vec4 fragColor;                                    \n"
+    "uniform sampler2D rgbTexSampler;                       \n"
     "void main() {                                          \n"
-    "  fragColor = texture(yuvTexSampler, v_texcoord); \n"
+    "  fragColor = texture(rgbTexSampler, v_texcoord);      \n"
     "}                                                      \n";
 
 EglRenderer::EglRenderer()
@@ -66,8 +63,6 @@ int EglRenderer::SetWindow(ANativeWindow *window) {
     LOGI("CreateRgbTexture rgb_texture=%d", rgb_texture_);
 
     shader_ = std::make_unique<Shader>(kVertexShader, kFragmentShader);
-    shader_->BindAttribLocation(attribute_vertex_index_, "position");
-    shader_->BindAttribLocation(attribute_texcoord_index_, "texcoord");
     shader_->Use();
   });
   return 0;

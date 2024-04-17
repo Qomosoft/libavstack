@@ -23,7 +23,6 @@ class SWVideoDecoder : public VideoDecoder {
   ~SWVideoDecoder();
   int Init(const std::string &uri) override;
   int Finalize() override;
-  int DecodeFrames(float duration, std::list<AVFrame *> *frames) override;
   int DecodeFrames(float duration,
                    float *decoded_duration,
                    FrameQueuePtr audio_q,
@@ -39,12 +38,6 @@ class SWVideoDecoder : public VideoDecoder {
 
  private:
   int OpenCodecContext(int *stream_idx, AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, AVMediaType type);
-  int DecodeFrame(AVCodecContext *dec,
-                  AVPacket *pkt,
-                  std::list<AVFrame *> *frames,
-                  AVFrame *frame,
-                  float *decoded_duration);
-
   int DecodeFrame(AVCodecContext *dec,
                   AVPacket *pkt,
                   FrameQueuePtr frame_q,

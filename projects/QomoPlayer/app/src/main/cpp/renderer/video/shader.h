@@ -10,8 +10,6 @@ class Shader {
 
   void Link();
 
-  void BindAttribLocation(int index, const std::string &name);
-
   void Use();
 
   void SetBool(const std::string &name, bool value) const;
@@ -31,5 +29,4 @@ class Shader {
   bool linked_;
   std::string vertex_code_;
   std::string fragment_code_;
-  std::unordered_map<int, std::string> attributes_;
 };

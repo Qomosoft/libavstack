@@ -29,14 +29,6 @@ void Shader::Link() {
     id_ = glCreateProgram();
     glAttachShader(id_, vertex);
     glAttachShader(id_, fragment);
-    for (auto &attribute : attributes_) {
-        GLint index = attribute.first;
-        const char *name = attribute.second.c_str();
-        glBindAttribLocation(id_, index, name);
-        if (CheckGlError("glBindAttribLocation")) {
-            LOGE("bind %d to %s failed", index, name);
-        }
-    }
     glLinkProgram(id_);
     CheckCompileErrors(id_, "PROGRAM");
 
@@ -44,10 +36,6 @@ void Shader::Link() {
     glDeleteShader(vertex);
     glDeleteShader(fragment);
     linked_ = true;
-}
-
-void Shader::BindAttribLocation(int index, const std::string &name) {
-    attributes_[index] = name;
 }
 
 void Shader::Use() {
