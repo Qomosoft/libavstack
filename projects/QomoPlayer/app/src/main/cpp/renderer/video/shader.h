@@ -2,7 +2,7 @@
 
 #include <string>
 #include <unordered_map>
-#include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 
 class Shader {
  public:

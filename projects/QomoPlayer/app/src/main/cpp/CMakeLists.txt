@@ -67,7 +67,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         android
         log
         z
-        GLESv2
+        GLESv3
         EGL
         OpenSLES
         avfilter

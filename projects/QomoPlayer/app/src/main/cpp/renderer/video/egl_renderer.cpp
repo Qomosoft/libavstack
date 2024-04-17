@@ -14,20 +14,24 @@ extern "C" {
 static const AVPixelFormat kOutPixFmt = AV_PIX_FMT_RGBA;
 
 static const char* kVertexShader =
-    "attribute vec4 position;   \n"
-    "attribute vec2 texcoord;   \n"
-    "varying vec2 v_texcoord;   \n"
-    "void main(void)            \n"
-    "{                          \n"
-    "   gl_Position = position; \n"
-    "   v_texcoord = texcoord;  \n"
-    "}                          \n";
+    "#version 300 es                          \n"
+    "layout(location = 0) in vec4 position;   \n"
+    "layout(location = 1) in vec2 texcoord;   \n"
+    "out vec2 v_texcoord;                     \n"
+    "void main(void)                          \n"
+    "{                                        \n"
+    "   gl_Position = position;               \n"
+    "   v_texcoord = texcoord;                \n"
+    "}                                        \n";
 
 static const char* kFragmentShader =
-    "varying highp vec2 v_texcoord;                         \n"
+    "#version 300 es                                        \n"
+    "precision highp float;                                 \n"
+    "in vec2 v_texcoord;                                    \n"
+    "layout(location = 0) out vec4 fragColor; \n"
     "uniform sampler2D yuvTexSampler;                       \n"
     "void main() {                                          \n"
-    "  gl_FragColor = texture2D(yuvTexSampler, v_texcoord); \n"
+    "  fragColor = texture(yuvTexSampler, v_texcoord); \n"
     "}                                                      \n";
 
 EglRenderer::EglRenderer()
@@ -120,11 +124,11 @@ void EglRenderer::DrawRgb(Frame *frame, int frame_width, int frame_height) {
 
     shader_->Use();
     static const GLfloat vertices[] = {-1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f };
-    glVertexAttribPointer(attribute_vertex_index_, 2, GL_FLOAT, 0, 0, vertices);
-    glEnableVertexAttribArray(attribute_vertex_index_);
+    glVertexAttribPointer(0, 2, GL_FLOAT, 0, 0, vertices);
+    glEnableVertexAttribArray(0);
     static const GLfloat tex_coords[] = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f };
-    glVertexAttribPointer(attribute_texcoord_index_, 2, GL_FLOAT, 0, 0, tex_coords);
-    glEnableVertexAttribArray(attribute_texcoord_index_);
+    glVertexAttribPointer(1, 2, GL_FLOAT, 0, 0, tex_coords);
+    glEnableVertexAttribArray(1);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     if (egl_->SwapBuffers(egl_surface_) != 0) LOGE("SwapBuffers failed");
