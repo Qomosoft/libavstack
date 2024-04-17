@@ -1,5 +1,6 @@
 package com.qomo.rgbviewer;
 
+import android.content.res.AssetManager;
 import android.view.Surface;
 
 public class RgbViewer {
@@ -10,8 +11,8 @@ public class RgbViewer {
     nativeHandler = nativeCreate();
   }
 
-  public int Initialize(Surface surface) {
-    return nativeInitialize(nativeHandler, surface);
+  public int Initialize(Surface surface, AssetManager assetManager) {
+    return nativeInitialize(nativeHandler, surface, assetManager);
   }
 
 
@@ -29,7 +30,7 @@ public class RgbViewer {
 
   private native void nativeDestroy(long nativeHandler);
 
-  private native int nativeInitialize(long nativeHandler, Surface surface);
+  private native int nativeInitialize(long nativeHandler, Surface surface, AssetManager assetManager);
 
   private native int nativeOnWindowSizeChanged(long nativeHandler, int width, int height);
 

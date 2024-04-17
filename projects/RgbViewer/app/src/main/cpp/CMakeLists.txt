@@ -15,6 +15,6 @@ find_library(log-lib log)
 target_link_libraries(rgbviewer
         z
         android
-        GLESv2
+        GLESv3
         EGL
         ${log-lib})

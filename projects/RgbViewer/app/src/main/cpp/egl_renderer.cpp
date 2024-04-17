@@ -4,20 +4,23 @@
 #define LOG_TAG "EglRenderer"
 
 static const char* kVertexShader =
-    "attribute vec4 position;   \n"
-    "attribute vec2 texcoord;   \n"
-    "varying vec2 v_texcoord;   \n"
-    "void main(void)            \n"
-    "{                          \n"
-    "   gl_Position = position; \n"
-    "   v_texcoord = texcoord;  \n"
-    "}                          \n";
+    "#version 300 es                          \n"
+    "layout(location = 0) in vec4 position;   \n"
+    "layout(location = 1) in vec2 texcoord;   \n"
+    "out vec2 v_texcoord;                     \n"
+    "void main(void)                          \n"
+    "{                                        \n"
+    "   gl_Position = position;               \n"
+    "   v_texcoord = texcoord;                \n"
+    "}                                        \n";
 
 static const char* kFragmentShader =
-    "varying highp vec2 v_texcoord;                         \n"
-    "uniform sampler2D yuvTexSampler;                       \n"
+    "#version 300 es                                        \n"
+    "in vec2 v_texcoord;                                    \n"
+    "out vec4 fragColor;                                    \n"
+    "uniform sampler2D rgbTexSampler;                       \n"
     "void main() {                                          \n"
-    "  gl_FragColor = texture2D(yuvTexSampler, v_texcoord); \n"
+    "  fragColor = texture(rgbTexSampler, v_texcoord);      \n"
     "}                                                      \n";
 
 EglRenderer::EglRenderer()
@@ -29,7 +32,8 @@ EglRenderer::~EglRenderer() {
   if (!render_stop_) Stop();
 }
 
-int EglRenderer::Initialize() {
+int EglRenderer::Initialize(const std::vector<uint8_t>& data) {
+  data_ = data;
   PostOnRenderThread([=] {
     egl_ = std::make_unique<QomoEgl>();
     egl_->Initialize();
@@ -40,8 +44,6 @@ int EglRenderer::Initialize() {
     LOGI("CreateRgbTexture rgb_texture=%d", rgb_texture_);
 
     shader_ = std::make_unique<Shader>(kVertexShader, kFragmentShader);
-    shader_->BindAttribLocation(attribute_vertex_index_, "position");
-    shader_->BindAttribLocation(attribute_texcoord_index_, "texcoord");
     shader_->Use();
   });
 

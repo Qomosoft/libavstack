@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
   @Override
   public void surfaceCreated(@NonNull SurfaceHolder holder) {
     rgbViewer = new RgbViewer();
-    rgbViewer.Initialize(holder.getSurface());
+    rgbViewer.Initialize(holder.getSurface(), getAssets());
   }
   @Override
   public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {

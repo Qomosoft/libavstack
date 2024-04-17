@@ -7,6 +7,7 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 
+#include <vector>
 #include <thread>
 #include <memory>
 #include <mutex>
@@ -20,7 +21,7 @@ class EglRenderer {
 
   ~EglRenderer();
 
-  int Initialize();
+  int Initialize(const std::vector<uint8_t>& data);
 
   int SetWindow(ANativeWindow *window);
 
@@ -58,4 +59,5 @@ class EglRenderer {
   int attribute_texcoord_index_;
   int width_;
   int height_;
+  std::vector<uint8_t> data_;
 };
