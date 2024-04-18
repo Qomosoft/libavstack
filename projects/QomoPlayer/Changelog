@@ -4,3 +4,6 @@ version 1.0.0
 
 version 1.0.1
 - Add circular buffer to store frames
+
+version
+- Support YUV420P renderer, make it default renderer
