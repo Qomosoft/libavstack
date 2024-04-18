@@ -68,7 +68,6 @@ void MediaPlayer::Start() {
 
 void MediaPlayer::Stop() {
   LOGI("enter");
-  LOGI("media player stats:%s", Stats::ToString().c_str());
   if (is_stopped_) {
     LOGW("already stopped\n");
     return;
