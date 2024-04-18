@@ -79,6 +79,7 @@ int SWVideoDecoder::Init(const std::string &uri) {
 
   packet_ = av_packet_alloc();
   frame_ = av_frame_alloc();
+  processed_video_frame_ = av_frame_alloc();
   if (!packet_) {
     LOGE("alloc packet failed\n");
   }
@@ -107,6 +108,7 @@ int SWVideoDecoder::Init(const std::string &uri) {
 int SWVideoDecoder::Finalize() {
   av_packet_free(&packet_);
   av_frame_free(&frame_);
+  av_frame_free(&processed_video_frame_);
   avcodec_free_context(&audio_dec_ctx_);
   avcodec_free_context(&video_dec_ctx_);
   avformat_close_input(&fmt_ctx_);
@@ -204,7 +206,7 @@ int SWVideoDecoder::DecodeFrame(AVCodecContext *dec,
       TIME_EVENT(Stats::first_video_decoded_time_pt);
       float time_unit = av_q2d(fmt_ctx_->streams[video_stream_index_]->time_base);
       float duration_time = frame->pkt_duration * time_unit;
-      ProcessVideoFrame(frame, time_unit, dst_frame);
+      ProcessVideoFrame(frame, time_unit, dst_frame, false);
       float pts_time = frame->pts * time_unit;
       float dts_time = frame->pkt_dts * time_unit;
 //      LOGI("receive %s frame pkt_pos=%d, pkt_duration=%d, duration_time=%f, pts=%d, pts_time=%f, "
@@ -269,35 +271,48 @@ int SWVideoDecoder::DecodeFrames(float duration,
   return is_eof ? AVERROR_EOF : ret;
 }
 
-void SWVideoDecoder::ProcessVideoFrame(AVFrame *src, float time_unit, Frame *dst) {
+void SWVideoDecoder::ProcessVideoFrame(AVFrame *src, float time_unit, Frame *dst, bool convert) {
 //  BlockProfiler profiler("ProcessVideoFrame");
   int ret;
-  int rgb_data_size = av_image_get_buffer_size(kOutPixFmt, src->width, src->height, 1);
-//  uint8_t *rgb_data = new uint8_t[rgb_data_size];
-  uint8_t *rgb_data = dst->GetData();
-  if (rgb_data == nullptr) {
-    rgb_data = new uint8_t[rgb_data_size];
+  int processed_data_size;
+  if (convert) {
+    processed_data_size = av_image_get_buffer_size(kOutPixFmt, src->width, src->height, 1);
+  } else {
+    processed_data_size = av_image_get_buffer_size(video_dec_ctx_->pix_fmt, src->width, src->height, 1);
   }
-  AVFrame *rgb_frame = av_frame_alloc();
-  av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, rgb_data,
-                       kOutPixFmt, src->width, src->height, 1);
-  ret = sws_scale(sws_context_,
-                  src->data,
-                  src->linesize,
-                  0,
-                  src->height,
-                  rgb_frame->data,
-                  rgb_frame->linesize);
+//  uint8_t *processed_data = new uint8_t[processed_data_size];
+  uint8_t *processed_data = dst->GetData();
+  if (processed_data == nullptr) {
+    processed_data = new uint8_t[processed_data_size];
+  }
+
+  if (convert) {
+    av_image_fill_arrays(processed_video_frame_->data, processed_video_frame_->linesize, processed_data,
+                         kOutPixFmt, src->width, src->height, 1);
+    ret = sws_scale(sws_context_,
+                    src->data,
+                    src->linesize,
+                    0,
+                    src->height,
+                    processed_video_frame_->data,
+                    processed_video_frame_->linesize);
+    av_frame_unref(processed_video_frame_);
+    if (ret < 0) {
+      LOGE("sws_scale failed %s", av_err2str(ret));
+    }
+    dst->SetPixFmt(kOutPixFmt);
+  } else {
+    av_image_copy_to_buffer(processed_data, processed_data_size, src->data, src->linesize, video_dec_ctx_->pix_fmt, src->width, src->height, 1);
+    dst->SetPixFmt(video_dec_ctx_->pix_fmt);
+  }
+
   dst->SetMediaType(kMediaTypeVideo);
-  dst->SetData(rgb_data);
-  dst->SetSize(rgb_data_size);
+  dst->SetData(processed_data);
+  dst->SetSize(processed_data_size);
   dst->SetDuration(src->pkt_duration * time_unit);
   dst->SetPts(src->pts * time_unit);
   dst->SetWidth(src->width);
   dst->SetHeight(src->height);
-  if (ret < 0) {
-    LOGE("sws_scale failed %s", av_err2str(ret));
-  }
 }
 
 void SWVideoDecoder::ProcessAudioFrame(AVFrame *src, float time_unit, Frame *dst) {

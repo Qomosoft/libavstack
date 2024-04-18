@@ -36,7 +36,11 @@ class EglRenderer {
 
   int SetWindowSize(int width, int height);
 
+  void DrawFrame(Frame* frame);
+
   void DrawRgb(Frame *frame, int frame_width, int frame_height);
+
+  void DrawYuv(Frame *frame, int width, int height);
 
  private:
 
@@ -60,8 +64,7 @@ class EglRenderer {
   ANativeWindow *window_;
   EGLSurface egl_surface_;
   GLuint rgb_texture_;
-  int attribute_vertex_index_;
-  int attribute_texcoord_index_;
+  std::vector<GLuint> yuv_textures_;
   int width_;
   int height_;
 };

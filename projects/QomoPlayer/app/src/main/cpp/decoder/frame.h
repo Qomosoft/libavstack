@@ -25,6 +25,8 @@ class Frame {
   void SetWidth(int width);
   int GetHeight() const;
   void SetHeight(int height);
+  int GetPixFmt() const;
+  void SetPixFmt(int pix_fmt);
   std::string ToString() const;
  private:
   int media_type_;
@@ -34,4 +36,5 @@ class Frame {
   long size_;
   int width_;
   int height_;
+  int pix_fmt_;
 };

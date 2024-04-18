@@ -60,3 +60,9 @@ long Frame::GetSize() const {
 void Frame::SetSize(long size) {
   size_ = size;
 }
+int Frame::GetPixFmt() const {
+  return pix_fmt_;
+}
+void Frame::SetPixFmt(int pix_fmt) {
+  pix_fmt_ = pix_fmt;
+}

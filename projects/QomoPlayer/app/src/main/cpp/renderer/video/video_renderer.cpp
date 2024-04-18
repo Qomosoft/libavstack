@@ -47,5 +47,5 @@ void VideoRenderer::OnDraw() {
   int ret = callback_->OnFrameNeeded(&frame, AVMEDIA_TYPE_VIDEO);
   if (!frame) return;
 //  LOGI("draw frame %ld\n", frame->pkt_pos);
-  egl_renderer_->DrawRgb(frame, frame->GetWidth(), frame->GetHeight());
+  egl_renderer_->DrawFrame(frame);
 }

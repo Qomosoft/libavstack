@@ -43,7 +43,7 @@ class SWVideoDecoder : public VideoDecoder {
                   FrameQueuePtr frame_q,
                   AVFrame *frame,
                   float *decoded_duration);
-  void ProcessVideoFrame(AVFrame *src, float time_unit, Frame *dst);
+  void ProcessVideoFrame(AVFrame *src, float time_unit, Frame *dst, bool convert = false);
   void ProcessAudioFrame(AVFrame *src, float time_unit, Frame *dst);
 
   void SeekToPosition(float seconds);
@@ -54,6 +54,7 @@ class SWVideoDecoder : public VideoDecoder {
   AVCodecContext  *video_dec_ctx_;
   AVPacket *packet_;
   AVFrame *frame_;
+  AVFrame *processed_video_frame_;
   int video_stream_index_;
   int audio_stream_index_;
   int channels_;
