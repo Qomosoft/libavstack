@@ -1,89 +1,54 @@
+#define LOG_TAG "EglRenderer"
 #include "egl_renderer.h"
 #include "logging.h"
 
-#define LOG_TAG "EglRenderer"
 #define GLSL(version, shader) "#version " #version "\n" #shader
 #define GLSL300(shader) GLSL(300 es, shader)
 
-static const char* kVertexShader =
-    "#version 300 es                          \n"
-    "layout(location = 0) in vec4 position;   \n"
-    "layout(location = 1) in vec2 texcoord;   \n"
-    "out vec2 v_texcoord;                     \n"
-    "void main(void)                          \n"
-    "{                                        \n"
-    "   gl_Position = position;               \n"
-    "   v_texcoord = texcoord;                \n"
-    "}                                        \n";
+static const char* kVertexShader = GLSL300(
+    layout(location = 0) in vec4 position;
+    layout(location = 1) in vec2 texcoord;
+    out vec2 v_texcoord;
+    void main()
+    {
+      gl_Position = position;
+      v_texcoord = texcoord;
+    }
+);
 
-static const char* kFragmentShader =
-    "#version 300 es                                        \n"
-    "in vec2 v_texcoord;                                    \n"
-    "out vec4 fragColor;                                    \n"
-    "uniform sampler2D rgbTexSampler;                       \n"
-    "void main() {                                          \n"
-    "  fragColor = texture(rgbTexSampler, v_texcoord);      \n"
-    "}                                                      \n";
+static const char* kRgbFragmentShader = GLSL300(
+    in vec2 v_texcoord;
+    out vec4 fragColor;
+    uniform sampler2D rgbTexSampler;
+    void main()
+    {
+      fragColor = texture(rgbTexSampler, v_texcoord);
+    }
+);
 
-static const char* kYuvFragmentShader =
-    "#version 300 es                                        \n"
-    "precision highp float;\n"
-    "in vec2 v_texcoord;\n"
-    "out vec4 fragColor;                                    \n"
-    "uniform sampler2D s_texture_y;\n"
-    "uniform sampler2D s_texture_u;\n"
-    "uniform sampler2D s_texture_v;\n"
-    "void main(void)\n"
-    "{\n"
-    "vec3 yuv;\n"
-    "yuv.x = texture(s_texture_y, v_texcoord).r;\n"
-    "yuv.y = texture(s_texture_u, v_texcoord).r - 0.5;"
-    "yuv.z = texture(s_texture_u, v_texcoord).r - 0.5;"
-    "highp vec3 rgb = mat3(1.0,       1.0,     1.0,\n"
-    "                      0.0, \t-0.39465, \t2.03211,\n"
-    "                      1.13983,  -0.5806,     0.0) * yuv;\n"
-    "fragColor = vec4(rgb, 1.0);\n"
-    "}\n";
+static const char* kYuvFragmentShader = GLSL300(
+     precision mediump float;
+     in vec2 v_texcoord;
+     out vec4 gl_FragColor;
 
-static const char *vertexShader = GLSL300(
-                                      layout(location = 0) in vec4 aPosition;//输入的顶点坐标，会在程序指定将数据输入到该字段
-                                      layout(location = 1) in vec2 aTextCoord;//输入的纹理坐标，会在程序指定将数据输入到该字段
-                                      out vec2 vTextCoord;//输出的纹理坐标
-                                      void main() {
-                                        //这里其实是将上下翻转过来（因为安卓图片会自动上下翻转，所以转回来）
-//            vTextCoord = vec2(aTextCoord.x, 1.0 - aTextCoord.y);
-                                        vTextCoord = aTextCoord;
-                                        //直接把传入的坐标值作为传入渲染管线。gl_Position是OpenGL内置的
-                                        gl_Position = aPosition;
-                                      }
-                                  );
-//图元被光栅化为多少片段，就被调用多少次
-static const char *fragYUV420P = GLSL300(
-                                     precision mediump float;
-                                     in vec2 vTextCoord;
-                                     out vec4 gl_FragColor;
-                                     //输入的yuv三个纹理
-                                     uniform sampler2D yTexture;//采样器
-                                     uniform sampler2D uTexture;//采样器
-                                     uniform sampler2D vTexture;//采样器
+     uniform sampler2D yTexture;
+     uniform sampler2D uTexture;
+     uniform sampler2D vTexture;
 
-                                     void main() {
-                                       vec3 yuv;
-                                       vec3 rgb;
-                                       //分别取yuv各个分量的采样纹理（r表示？）
-                                       //
-                                       yuv.x = texture(yTexture, vTextCoord).g;
-                                       yuv.y = texture(uTexture, vTextCoord).g - 0.5;
-                                       yuv.z = texture(vTexture, vTextCoord).g - 0.5;
-                                       rgb = mat3(
-                                           1.0, 1.0, 1.0,
-                                           0.0, -0.39465, 2.03211,
-                                           1.13983, -0.5806, 0.0
-                                       ) * yuv;
-                                       //gl_FragColor是OpenGL内置的
-                                       gl_FragColor = vec4(rgb, 1.0);
-                                     }
-                                 );
+     void main() {
+       vec3 yuv;
+       vec3 rgb;
+       yuv.x = texture(yTexture, v_texcoord).g;
+       yuv.y = texture(uTexture, v_texcoord).g - 0.5;
+       yuv.z = texture(vTexture, v_texcoord).g - 0.5;
+       rgb = mat3(
+           1.0, 1.0, 1.0,
+           0.0, -0.39465, 2.03211,
+           1.13983, -0.5806, 0.0
+       ) * yuv;
+       gl_FragColor = vec4(rgb, 1.0);
+     }
+);
 
 
 EglRenderer::EglRenderer()
@@ -108,11 +73,11 @@ int EglRenderer::Initialize(const std::vector<uint8_t>& data) {
     egl_surface_ = egl_->CreateWindowSurface(window_);
     egl_->MakeCurrent(egl_surface_);
 
-//    rgb_texture_ = CreateRgbTexture();
+    rgb_texture_ = CreateRgbTexture();
 //    LOGI("CreateRgbTexture rgb_texture=%d", rgb_texture_);
-//    shader_ = std::make_unique<Shader>(kVertexShader, kFragmentShader);
-//    shader_ = std::make_unique<Shader>(kVertexShader, kYuvFragmentShader);
-    shader_ = std::make_unique<Shader>(vertexShader, fragYUV420P);
+//    shader_ = std::make_unique<Shader>(kVertexShader, kRgbFragmentShader);
+    shader_ = std::make_unique<Shader>(kVertexShader, kYuvFragmentShader);
+//    shader_ = std::make_unique<Shader>(vertexShader, kYuvFragmentShader);
     shader_->Use();
   });
 
@@ -200,17 +165,6 @@ void EglRenderer::DrawYuv(const std::vector<uint8_t> &yuv, int width, int height
   PostOnRenderThread([=] {
     LOGI("start");
 
-    // load rgb data to texture
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, rgb_texture_);
-//    if (CheckGlError("glBindTexture")) {
-//      return;
-//    }
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, yuv.data());
-//    if (CheckGlError("glTexImage2D")) {
-//      return;
-//    }
-
     glViewport(0, 0, width_, height_);
     glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -227,9 +181,6 @@ void EglRenderer::DrawYuv(const std::vector<uint8_t> &yuv, int width, int height
     glEnableVertexAttribArray(attribute_texcoord_index_);
 
     // yuv textures sampler
-//    shader_->SetInt("s_texture_y", 0);
-//    shader_->SetInt("s_texture_y", 1);
-//    shader_->SetInt("s_texture_y", 2);
     shader_->SetInt("yTexture", 0);
     shader_->SetInt("uTexture", 1);
     shader_->SetInt("vTexture", 2);
