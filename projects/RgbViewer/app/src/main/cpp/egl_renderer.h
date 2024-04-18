@@ -34,6 +34,8 @@ class EglRenderer {
  private:
   void DrawRgb(const std::vector<uint8_t> &rgb, int frame_width, int frame_height);
 
+  void DrawYuv(const std::vector<uint8_t> &yuv, int width, int height);
+
   template <typename F, typename...Args>
   void PostOnRenderThread(F &&f, Args &&...args);
 
@@ -42,6 +44,9 @@ class EglRenderer {
   GLuint CreateRgbTexture();
 
   bool CheckGlError(const char *op);
+
+  void InitYuvTextures();
+  void BindYuvTextures(const std::vector<uint8_t>& data, int frame_width, int frame_height);
 
  private:
   bool render_stop_;
@@ -55,6 +60,8 @@ class EglRenderer {
   ANativeWindow *window_;
   EGLSurface egl_surface_;
   GLuint rgb_texture_;
+  GLuint yuv_textures_[3];
+  std::vector<std::string> yuv_texture_samplers_;
   int attribute_vertex_index_;
   int attribute_texcoord_index_;
   int width_;
