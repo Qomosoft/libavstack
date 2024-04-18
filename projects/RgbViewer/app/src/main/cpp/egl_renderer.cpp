@@ -5,6 +5,8 @@
 #define GLSL(version, shader) "#version " #version "\n" #shader
 #define GLSL300(shader) GLSL(300 es, shader)
 
+#define PIX_FMT_RGB 1
+
 static const char* kVertexShader = GLSL300(
     layout(location = 0) in vec4 position;
     layout(location = 1) in vec2 texcoord;
@@ -54,12 +56,7 @@ static const char* kYuvFragmentShader = GLSL300(
 EglRenderer::EglRenderer()
     : render_stop_(false),
       attribute_vertex_index_(0),
-      attribute_texcoord_index_(1),
-      yuv_texture_samplers_({
-                                "s_texture_y",
-                                "s_texture_u",
-                                "s_texture_v",
-                            }) {}
+      attribute_texcoord_index_(1) {}
 
 EglRenderer::~EglRenderer() {
   if (!render_stop_) Stop();
@@ -73,11 +70,14 @@ int EglRenderer::Initialize(const std::vector<uint8_t>& data) {
     egl_surface_ = egl_->CreateWindowSurface(window_);
     egl_->MakeCurrent(egl_surface_);
 
+    glGenTextures(3, yuv_textures_);
+#if PIX_FMT_RGB
     rgb_texture_ = CreateRgbTexture();
-//    LOGI("CreateRgbTexture rgb_texture=%d", rgb_texture_);
-//    shader_ = std::make_unique<Shader>(kVertexShader, kRgbFragmentShader);
+    LOGI("CreateRgbTexture rgb_texture=%d", rgb_texture_);
+    shader_ = std::make_unique<Shader>(kVertexShader, kRgbFragmentShader);
+#else
     shader_ = std::make_unique<Shader>(kVertexShader, kYuvFragmentShader);
-//    shader_ = std::make_unique<Shader>(vertexShader, kYuvFragmentShader);
+#endif
     shader_->Use();
   });
 
@@ -117,9 +117,12 @@ int EglRenderer::SetWindowSize(int width, int height) {
   width_ = width;
   height_ = height;
 
-//  rgb_generator_ = std::make_unique<RgbGenerator>(200, 200);
-//  DrawRgb(rgb_generator_->data(), 200, 200);
+#if PIX_FMT_RGB
+  rgb_generator_ = std::make_unique<RgbGenerator>(200, 200);
+  DrawRgb(rgb_generator_->data(), 200, 200);
+#else
   DrawYuv(data_, 640, 480);
+#endif
 
   return 0;
 }
@@ -184,15 +187,13 @@ void EglRenderer::DrawYuv(const std::vector<uint8_t> &yuv, int width, int height
     shader_->SetInt("yTexture", 0);
     shader_->SetInt("uTexture", 1);
     shader_->SetInt("vTexture", 2);
-    GLuint texts[3] = {0};
-    const uint8_t* buf[3] = {0};
-    buf[0] = yuv.data();
-    buf[1] = yuv.data() + width * height;
-    buf[2] = yuv.data() + width * height * 5 / 4;
-    glGenTextures(3, texts);
+
+    const uint8_t* data_y = yuv.data();
+    const uint8_t* data_u = yuv.data() + width * height;
+    const uint8_t* data_v = yuv.data() + width * height * 5 / 4;
 
     //textures[0]
-    glBindTexture(GL_TEXTURE_2D, texts[0]);
+    glBindTexture(GL_TEXTURE_2D, yuv_textures_[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D,
@@ -207,7 +208,7 @@ void EglRenderer::DrawYuv(const std::vector<uint8_t> &yuv, int width, int height
     );
 
     //绑定纹理
-    glBindTexture(GL_TEXTURE_2D, texts[1]);
+    glBindTexture(GL_TEXTURE_2D, yuv_textures_[1]);
     //缩小的过滤器
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -224,7 +225,7 @@ void EglRenderer::DrawYuv(const std::vector<uint8_t> &yuv, int width, int height
     );
 
     //绑定纹理
-    glBindTexture(GL_TEXTURE_2D, texts[2]);
+    glBindTexture(GL_TEXTURE_2D, yuv_textures_[2]);
     //缩小的过滤器
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -244,31 +245,31 @@ void EglRenderer::DrawYuv(const std::vector<uint8_t> &yuv, int width, int height
     //下面的width,height主要是显示尺寸？
     glActiveTexture(GL_TEXTURE0);
     //绑定y对应的纹理
-    glBindTexture(GL_TEXTURE_2D, texts[0]);
+    glBindTexture(GL_TEXTURE_2D, yuv_textures_[0]);
     //替换纹理，比重新使用glTexImage2D性能高多
     glTexSubImage2D(GL_TEXTURE_2D, 0,
                     0, 0,//相对原来的纹理的offset
                     width, height,//加载的纹理宽度、高度。最好为2的次幂
                     GL_LUMINANCE, GL_UNSIGNED_BYTE,
-                    buf[0]);
+                    data_y);
 
     //激活第二层纹理，绑定到创建的纹理
     glActiveTexture(GL_TEXTURE1);
     //绑定u对应的纹理
-    glBindTexture(GL_TEXTURE_2D, texts[1]);
+    glBindTexture(GL_TEXTURE_2D, yuv_textures_[1]);
     //替换纹理，比重新使用glTexImage2D性能高
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_LUMINANCE,
                     GL_UNSIGNED_BYTE,
-                    buf[1]);
+                    data_u);
 
     //激活第三层纹理，绑定到创建的纹理
     glActiveTexture(GL_TEXTURE2);
     //绑定v对应的纹理
-    glBindTexture(GL_TEXTURE_2D, texts[2]);
+    glBindTexture(GL_TEXTURE_2D, yuv_textures_[2]);
     //替换纹理，比重新使用glTexImage2D性能高
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_LUMINANCE,
                     GL_UNSIGNED_BYTE,
-                    buf[2]);
+                    data_v);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     if (egl_->SwapBuffers(egl_surface_) != 0) LOGE("SwapBuffers failed");
@@ -329,62 +330,3 @@ bool EglRenderer::CheckGlError(const char* op) {
 
   return false;
 }
-
-void EglRenderer::InitYuvTextures() {
-  int yuv_tex_size = sizeof(yuv_textures_);
-  glGenTextures(yuv_tex_size, yuv_textures_);
-  for (int i = 0; i < yuv_tex_size; i++) {
-    glBindTexture(GL_TEXTURE_2D, yuv_textures_[i]);
-    if (CheckGlError("glBindTexture")) return;
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    if (CheckGlError("glTexParameteri")) return;
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    if (CheckGlError("glTexParameteri")) return;
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    if (CheckGlError("glTexParameteri")) return;
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if (CheckGlError("glTexParameteri")) return;
-  }
-}
-
-void EglRenderer::BindYuvTextures(const std::vector<uint8_t>& data, int frame_width, int frame_height) {
-  for (int i = 0; i < 3; i++) {
-    const uint8_t* pixels = nullptr;
-    int width = 0;
-    int height = 0;
-    std::string sampler;
-
-    switch (i) {
-      case 0:
-        width = frame_width;
-        height = frame_height;
-        pixels = data.data();
-        sampler = "s_texture_y";
-        break;
-      case 1:
-        width /= 2;
-        height /= 2;
-        pixels = data.data() + frame_width * frame_height;
-        sampler = "s_texture_u";
-        break;
-      case 2:
-        width /= 2;
-        height /= 2;
-        pixels = data.data() + frame_width * frame_height * 5 / 4;
-        sampler = "s_texture_v";
-    }
-    glActiveTexture(GL_TEXTURE0 + i);
-    if (CheckGlError("glActiveTexture")) return;
-    glBindTexture(GL_TEXTURE_2D, yuv_textures_[i]);
-    if (CheckGlError("glBindTexture")) return;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, pixels);
-    if (CheckGlError("glTexImage2D")) return;
-//    shader_->SetInt(yuv_texture_samplers_[i], i);
-    shader_->SetInt(sampler, i);
-  }
-}
-
