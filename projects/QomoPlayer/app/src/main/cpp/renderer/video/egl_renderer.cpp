@@ -282,6 +282,7 @@ void EglRenderer::DrawYuv(Frame *frame, int width, int height) {
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     if (egl_->SwapBuffers(egl_surface_) != 0) LOGE("SwapBuffers failed");
+    TIME_EVENT(Stats::first_video_frame_rendered_time_pt);
 //    LOGI("end");
   });
 }
